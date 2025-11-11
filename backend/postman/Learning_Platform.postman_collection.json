@@ -1,0 +1,1235 @@
+{
+	"info": {
+		"_postman_id": "learning-platform-api",
+		"name": "Learning Platform API",
+		"description": "Complete API collection for Learning Platform with 81 endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "learning-platform"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{USER_TOKEN}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Log request",
+					"console.log(`${pm.request.method} ${pm.request.url}`);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Check response time",
+					"pm.test('Response time < 2000ms', () => {",
+					"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+					"});",
+					"",
+					"// Check status",
+					"pm.test('Status code is successful', () => {",
+					"    pm.response.to.have.status(200);",
+					"});",
+					"",
+					"// Auto-save data",
+					"if (pm.response.code === 200) {",
+					"    try {",
+					"        const jsonData = pm.response.json();",
+					"        ",
+					"        // Save tokens",
+					"        if (jsonData.data && jsonData.data.token) {",
+					"            const user = jsonData.data.user;",
+					"            if (user.role === 'ADMIN') {",
+					"                pm.environment.set('ADMIN_TOKEN', jsonData.data.token);",
+					"                pm.environment.set('ADMIN_ID', user.id);",
+					"                console.log('✅ Admin token saved');",
+					"            } else {",
+					"                pm.environment.set('USER_TOKEN', jsonData.data.token);",
+					"                pm.environment.set('USER_ID', user.id);",
+					"                console.log('✅ User token saved');",
+					"            }",
+					"        }",
+					"        ",
+					"        // Save IDs",
+					"        if (jsonData.data && jsonData.data.id) {",
+					"            const name = pm.info.requestName;",
+					"            if (name.includes('Major')) pm.environment.set('TEST_MAJOR_ID', jsonData.data.id);",
+					"            else if (name.includes('Subject')) pm.environment.set('TEST_SUBJECT_ID', jsonData.data.id);",
+					"            else if (name.includes('Lesson')) pm.environment.set('TEST_LESSON_ID', jsonData.data.id);",
+					"            else if (name.includes('Exam')) pm.environment.set('TEST_EXAM_ID', jsonData.data.id);",
+					"            else if (name.includes('Enroll')) pm.environment.set('TEST_ENROLLMENT_ID', jsonData.data.id);",
+					"            else if (name.includes('Blog')) pm.environment.set('TEST_BLOG_ID', jsonData.data.id);",
+					"            else if (name.includes('Question')) pm.environment.set('TEST_QUESTION_ID', jsonData.data.id);",
+					"        }",
+					"    } catch (e) {}",
+					"}"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User registered', () => {",
+									"    const data = pm.response.json().data;",
+									"    pm.expect(data.user.status).to.eql('PENDING');",
+									"    pm.environment.set('PENDING_USER_ID', data.user.id);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Test@123456\",\n  \"phone\": \"0123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/auth/register",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('ADMIN_TOKEN', response.data.token);",
+									"    pm.environment.set('ADMIN_ID', response.data.user.id);",
+									"    console.log('✅ Admin logged in successfully');",
+									"    console.log('Admin ID:', response.data.user.id);",
+									"    console.log('Admin Role:', response.data.user.role);",
+									"    console.log('Admin Token:', response.data.token.substring(0, 20) + '...');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@learnhub.com\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/auth/login",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('USER_TOKEN', response.data.token);",
+									"    pm.environment.set('USER_ID', response.data.user.id);",
+									"    console.log('✅ User logged in successfully');",
+									"    console.log('User ID:', response.data.user.id);",
+									"    console.log('User Status:', response.data.user.status);",
+									"    console.log('User Token:', response.data.token.substring(0, 20) + '...');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/auth/login",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (Student)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/auth/me",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/auth/me",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Logout (Student)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('USER_TOKEN');",
+									"    pm.environment.unset('USER_ID');",
+									"    console.log('✅ Student logged out successfully');",
+									"    console.log('🗑️ USER_TOKEN removed from environment');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/auth/logout",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				},
+				{
+					"name": "Logout (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    pm.environment.unset('ADMIN_TOKEN');",
+									"    pm.environment.unset('ADMIN_ID');",
+									"    console.log('✅ Admin logged out successfully');",
+									"    console.log('🗑️ ADMIN_TOKEN removed from environment');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/auth/logout",
+							"host": ["{{API_URL}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. User Management",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/users?page=1&limit=20",
+							"host": ["{{API_URL}}"],
+							"path": ["users"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "limit", "value": "20"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Pending Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/users/pending",
+							"host": ["{{API_URL}}"],
+							"path": ["users", "pending"]
+						}
+					}
+				},
+				{
+					"name": "Approve User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/users/{{PENDING_USER_ID}}/approve",
+							"host": ["{{API_URL}}"],
+							"path": ["users", "{{PENDING_USER_ID}}", "approve"]
+						}
+					}
+				},
+				{
+					"name": "Update User Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/users/{{PENDING_USER_ID}}/status",
+							"host": ["{{API_URL}}"],
+							"path": ["users", "{{PENDING_USER_ID}}", "status"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Major Management",
+			"item": [
+				{
+					"name": "List Majors (Public)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Has majors', () => {",
+									"    const data = pm.response.json().data;",
+									"    pm.expect(data).to.be.an('array');",
+									"    pm.expect(data.length).to.be.at.least(2);",
+									"    ",
+									"    // Save first major (Công nghệ thông tin)",
+									"    const itMajor = data.find(m => m.name.includes('Công nghệ')) || data[0];",
+									"    pm.environment.set('TEST_MAJOR_ID', itMajor.id);",
+									"    console.log('✅ Saved TEST_MAJOR_ID:', itMajor.name);",
+									"    ",
+									"    // Save second major (Toán học)",
+									"    const mathMajor = data.find(m => m.name.includes('Toán')) || data[1];",
+									"    if (mathMajor) {",
+									"        pm.environment.set('TEST_MAJOR_ID_2', mathMajor.id);",
+									"        console.log('✅ Saved TEST_MAJOR_ID_2:', mathMajor.name);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/majors",
+							"host": ["{{API_URL}}"],
+							"path": ["majors"]
+						}
+					}
+				},
+				{
+					"name": "Get Major Detail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Major has subjects', () => {",
+									"    const data = pm.response.json().data;",
+									"    pm.expect(data.subjects).to.be.an('array');",
+									"    ",
+									"    if (data.subjects.length > 0) {",
+									"        // Save first subject (Lập trình cơ bản - no prereq)",
+									"        const basicSubject = data.subjects.find(s => s.name.includes('Lập trình cơ bản')) || data.subjects[0];",
+									"        pm.environment.set('TEST_SUBJECT_ID', basicSubject.id);",
+									"        console.log('✅ Saved TEST_SUBJECT_ID:', basicSubject.name);",
+									"        ",
+									"        // Save second subject (Cấu trúc dữ liệu - has prereq)",
+									"        const dataStructSubject = data.subjects.find(s => s.name.includes('Cấu trúc'));",
+									"        if (dataStructSubject) {",
+									"            pm.environment.set('TEST_SUBJECT_ID_2', dataStructSubject.id);",
+									"            console.log('✅ Saved TEST_SUBJECT_ID_2:', dataStructSubject.name);",
+									"        }",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/majors/{{TEST_MAJOR_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["majors", "{{TEST_MAJOR_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Create Major (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Data Science\",\n  \"description\": \"Learn data analysis and machine learning\",\n  \"order\": 3,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/majors",
+							"host": ["{{API_URL}}"],
+							"path": ["majors"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Subject Management",
+			"item": [
+				{
+					"name": "List Subjects",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/subjects?majorId={{TEST_MAJOR_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["subjects"],
+							"query": [
+								{"key": "majorId", "value": "{{TEST_MAJOR_ID}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Subject Detail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Subject has lessons and exams', () => {",
+									"    const data = pm.response.json().data;",
+									"    ",
+									"    // Save lessons",
+									"    if (data.lessons && data.lessons.length > 0) {",
+									"        // Lesson 1: Giới thiệu về lập trình (no prereq, can start)",
+									"        const lesson1 = data.lessons.find(l => l.name.includes('Giới thiệu')) || data.lessons[0];",
+									"        pm.environment.set('TEST_LESSON_ID', lesson1.id);",
+									"        console.log('✅ Saved TEST_LESSON_ID:', lesson1.name);",
+									"        ",
+									"        // Lesson 2: Biến và kiểu dữ liệu (prereq: lesson1)",
+									"        const lesson2 = data.lessons.find(l => l.name.includes('Biến'));",
+									"        if (lesson2) {",
+									"            pm.environment.set('TEST_LESSON_ID_2', lesson2.id);",
+									"            console.log('✅ Saved TEST_LESSON_ID_2:', lesson2.name);",
+									"        }",
+									"        ",
+									"        // Lesson 3: Cấu trúc điều khiển (prereq: lesson2)",
+									"        const lesson3 = data.lessons.find(l => l.name.includes('điều khiển'));",
+									"        if (lesson3) {",
+									"            pm.environment.set('TEST_LESSON_ID_3', lesson3.id);",
+									"            console.log('✅ Saved TEST_LESSON_ID_3:', lesson3.name);",
+									"        }",
+									"    }",
+									"    ",
+									"    // Save exam",
+									"    if (data.exams && data.exams.length > 0) {",
+									"        const exam = data.exams[0];",
+									"        pm.environment.set('TEST_EXAM_ID', exam.id);",
+									"        console.log('✅ Saved TEST_EXAM_ID:', exam.name);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/subjects/{{TEST_SUBJECT_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["subjects", "{{TEST_SUBJECT_ID}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Enrollment",
+			"item": [
+				{
+					"name": "Enroll in Major",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const data = pm.response.json();",
+									"    pm.environment.set('TEST_ENROLLMENT_ID', data.id);",
+									"    console.log('✅ Enrolled in major with enrollment ID:', data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"majorId\": \"{{TEST_MAJOR_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/enrollments",
+							"host": ["{{API_URL}}"],
+							"path": ["enrollments"]
+						}
+					}
+				},
+				{
+					"name": "Get My Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/enrollments/my",
+							"host": ["{{API_URL}}"],
+							"path": ["enrollments", "my"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Learning Progress",
+			"item": [
+				{
+					"name": "Start Lesson",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    pm.environment.set('TEST_PROGRESS_ID', data.id);",
+									"    console.log('✅ Started lesson, progress ID:', data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/progress/lessons/{{TEST_LESSON_ID}}/start",
+							"host": ["{{API_URL}}"],
+							"path": ["progress", "lessons", "{{TEST_LESSON_ID}}", "start"]
+						}
+					}
+				},
+				{
+					"name": "Update Watch Time",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"watchTime\": 30\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/progress/lessons/{{TEST_LESSON_ID}}/progress",
+							"host": ["{{API_URL}}"],
+							"path": ["progress", "lessons", "{{TEST_LESSON_ID}}", "progress"]
+						}
+					}
+				},
+				{
+					"name": "Complete Lesson",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/progress/lessons/{{TEST_LESSON_ID}}/complete",
+							"host": ["{{API_URL}}"],
+							"path": ["progress", "lessons", "{{TEST_LESSON_ID}}", "complete"]
+						}
+					}
+				},
+				{
+					"name": "Get My Progress",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/progress/lessons?subjectId={{TEST_SUBJECT_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["progress", "lessons"],
+							"query": [
+								{"key": "subjectId", "value": "{{TEST_SUBJECT_ID}}"}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Exam Taking",
+			"item": [
+				{
+					"name": "Start Exam",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Exam started', () => {",
+									"    const data = pm.response.json().data;",
+									"    pm.environment.set('ATTEMPT_ID', data.attemptId);",
+									"    ",
+									"    // Generate sample answers",
+									"    const answers = {};",
+									"    data.questions.forEach(q => {",
+									"        if (q.type === 'MULTIPLE_CHOICE') answers[q.id] = 'A';",
+									"        else if (q.type === 'TRUE_FALSE') answers[q.id] = 'True';",
+									"        else answers[q.id] = 'Sample answer';",
+									"    });",
+									"    pm.environment.set('EXAM_ANSWERS', JSON.stringify(answers));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/exams/{{TEST_EXAM_ID}}/start",
+							"host": ["{{API_URL}}"],
+							"path": ["exams", "{{TEST_EXAM_ID}}", "start"]
+						}
+					}
+				},
+				{
+					"name": "Submit Exam",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Get answers from environment",
+									"const answers = pm.environment.get('EXAM_ANSWERS');",
+									"pm.request.body.raw = JSON.stringify({",
+									"    attemptId: pm.environment.get('ATTEMPT_ID'),",
+									"    answers: JSON.parse(answers || '{}')",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const data = pm.response.json();",
+									"    pm.environment.set('TEST_EXAM_RESULT_ID', data.id);",
+									"    console.log('✅ Exam submitted. Score:', data.score + '%', 'Passed:', data.passed);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"attemptId\": \"{{ATTEMPT_ID}}\",\n  \"answers\": {}\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/exams/{{TEST_EXAM_ID}}/submit",
+							"host": ["{{API_URL}}"],
+							"path": ["exams", "{{TEST_EXAM_ID}}", "submit"]
+						}
+					}
+				},
+				{
+					"name": "Get Exam Result",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/exams/attempts/{{ATTEMPT_ID}}/result",
+							"host": ["{{API_URL}}"],
+							"path": ["exams", "attempts", "{{ATTEMPT_ID}}", "result"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "8. Dashboard",
+			"item": [
+				{
+					"name": "Dashboard Overview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/admin/dashboard/overview",
+							"host": ["{{API_URL}}"],
+							"path": ["admin", "dashboard", "overview"]
+						}
+					}
+				},
+				{
+					"name": "Major Progress Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/admin/dashboard/progress/{{TEST_MAJOR_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["admin", "dashboard", "progress", "{{TEST_MAJOR_ID}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "9. Blog",
+			"item": [
+				{
+					"name": "Create Blog Post",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Những tips học lập trình hiệu quả cho người mới\",\n  \"content\": \"Chia sẻ kinh nghiệm học lập trình từ zero to hero. Bắt đầu từ những ngôn ngữ cơ bản, tìm hiểu logic, và xây dựng thói quen code mỗi ngày...\",\n  \"excerpt\": \"Kinh nghiệm học lập trình từ zero to hero\",\n  \"tags\": [\"javascript\", \"python\", \"learning\", \"beginner\"]\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/blog",
+							"host": ["{{API_URL}}"],
+							"path": ["blog"]
+						}
+					}
+				},
+				{
+					"name": "List Blog Posts",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/blog?page=1&limit=10",
+							"host": ["{{API_URL}}"],
+							"path": ["blog"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "limit", "value": "10"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Great post! 🚀\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/blog/{{TEST_BLOG_ID}}/comments",
+							"host": ["{{API_URL}}"],
+							"path": ["blog", "{{TEST_BLOG_ID}}", "comments"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "10. Q&A",
+			"item": [
+				{
+					"name": "Ask Question",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const data = pm.response.json();",
+									"    pm.environment.set('TEST_QUESTION_ID', data.id);",
+									"    console.log('✅ Question created with ID:', data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Sự khác biệt giữa let và var trong JavaScript là gì?\",\n  \"content\": \"Mình đang học JavaScript và thấy có cả let, var và const. Cho mình hỏi sự khác biệt giữa let và var là gì? Khi nào nên dùng let và khi nào nên dùng var?\",\n  \"tags\": [\"javascript\"]\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/questions",
+							"host": ["{{API_URL}}"],
+							"path": ["questions"]
+						}
+					}
+				},
+				{
+					"name": "List Questions",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/questions?page=1&sortBy=recent",
+							"host": ["{{API_URL}}"],
+							"path": ["questions"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "sortBy", "value": "recent"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Post Answer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const data = pm.response.json();",
+									"    pm.environment.set('TEST_ANSWER_ID', data.id);",
+									"    console.log('✅ Answer posted with ID:', data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Sự khác biệt chính:\\n\\n1. **Scope**: var là function-scoped, let là block-scoped\\n2. **Hoisting**: var được hoist với giá trị undefined, let có temporal dead zone\\n3. **Re-declaration**: var cho phép khai báo lại, let không\\n\\nVí dụ:\\n```javascript\\nif (true) {\\n  var x = 1; // accessible outside\\n  let y = 2; // only inside block\\n}\\nconsole.log(x); // 1\\nconsole.log(y); // ReferenceError\\n```\\n\\nNên dùng let trong hầu hết trường hợp vì an toàn hơn!\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/questions/{{TEST_QUESTION_ID}}/answers",
+							"host": ["{{API_URL}}"],
+							"path": ["questions", "{{TEST_QUESTION_ID}}", "answers"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "11. Admin Statistics",
+			"item": [
+				{
+					"name": "Overview Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/admin/stats/overview",
+							"host": ["{{API_URL}}"],
+							"path": ["admin", "stats", "overview"]
+						}
+					}
+				},
+				{
+					"name": "User Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/admin/stats/users?days=30",
+							"host": ["{{API_URL}}"],
+							"path": ["admin", "stats", "users"],
+							"query": [
+								{"key": "days", "value": "30"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Learning Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/admin/stats/learning",
+							"host": ["{{API_URL}}"],
+							"path": ["admin", "stats", "learning"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "12. Stream Chat",
+			"item": [
+				{
+					"name": "Generate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Token generated', () => {",
+									"    const data = pm.response.json().data;",
+									"    pm.environment.set('STREAM_TOKEN', data.token);",
+									"    pm.environment.set('STREAM_API_KEY', data.apiKey);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/chat/token",
+							"host": ["{{API_URL}}"],
+							"path": ["chat", "token"]
+						}
+					}
+				},
+				{
+					"name": "Create Direct Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"recipientId\": \"{{ADMIN_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "{{API_URL}}/chat/dm",
+							"host": ["{{API_URL}}"],
+							"path": ["chat", "dm"]
+						}
+					}
+				},
+				{
+					"name": "Get User Channels",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/chat/channels",
+							"host": ["{{API_URL}}"],
+							"path": ["chat", "channels"]
+						}
+					}
+				},
+				{
+					"name": "Create Subject Channel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{USER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{API_URL}}/chat/channels/subject/{{TEST_SUBJECT_ID}}",
+							"host": ["{{API_URL}}"],
+							"path": ["chat", "channels", "subject", "{{TEST_SUBJECT_ID}}"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "API_URL",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		}
+	]
+}

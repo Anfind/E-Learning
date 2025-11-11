@@ -1,0 +1,410 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String   // Hashed with bcrypt
+  name            String
+  phone           String?
+  avatar          String?
+  role            Role     @default(USER)
+  
+  // User approval workflow
+  status          UserStatus @default(PENDING)
+  approvedAt      DateTime?
+  approvedBy      String?
+  
+  // Face Recognition (implement cuối cùng)
+  faceImage       String?  // Path to uploaded face image
+  faceEmbedding   String?  @db.LongText // JSON array [128 floats]
+  faceRegistered  Boolean  @default(false)
+  
+  // Relationships
+  enrollments     Enrollment[]
+  lessonProgress  LessonProgress[]
+  examAttempts    ExamAttempt[]
+  blogPosts       BlogPost[]
+  questions       Question[]
+  answers         Answer[]
+  comments        Comment[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING   // Chờ admin approve
+  APPROVED  // Đã approve
+  ACTIVE    // Đã active, có thể học
+  DEACTIVE  // Bị deactive
+}
+
+// ============================================
+// LEARNING STRUCTURE
+// ============================================
+
+// Ngành học (Major)
+model Major {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  imageUrl    String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  
+  subjects    Subject[]
+  enrollments Enrollment[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("majors")
+}
+
+// Môn học (Subject/Course)
+model Subject {
+  id              String    @id @default(uuid())
+  majorId         String
+  name            String
+  description     String?   @db.Text
+  imageUrl        String?
+  order           Int       @default(0)
+  isActive        Boolean   @default(true)
+  
+  // Prerequisite: Môn học tiên quyết
+  prerequisiteId  String?
+  prerequisite    Subject?  @relation("SubjectPrerequisite", fields: [prerequisiteId], references: [id], onDelete: SetNull)
+  dependentSubjects Subject[] @relation("SubjectPrerequisite")
+  
+  major           Major     @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  lessons         Lesson[]
+  exams           Exam[]
+  questions       Question[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([majorId])
+  @@index([prerequisiteId])
+  @@map("subjects")
+}
+
+// Bài học (Lesson)
+model Lesson {
+  id              String    @id @default(uuid())
+  subjectId       String
+  name            String
+  description     String?   @db.Text
+  videoUrl        String?
+  duration        Int       // Thời lượng video (minutes)
+  order           Int       @default(0)
+  isActive        Boolean   @default(true)
+  
+  // Prerequisite: Bài học tiên quyết
+  prerequisiteId  String?
+  prerequisite    Lesson?   @relation("LessonPrerequisite", fields: [prerequisiteId], references: [id], onDelete: SetNull)
+  dependentLessons Lesson[] @relation("LessonPrerequisite")
+  
+  subject         Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+  questions       Question[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([subjectId])
+  @@index([prerequisiteId])
+  @@map("lessons")
+}
+
+// ============================================
+// USER LEARNING PROGRESS
+// ============================================
+
+// Ghi danh ngành học
+model Enrollment {
+  id          String    @id @default(uuid())
+  userId      String
+  majorId     String
+  status      EnrollmentStatus @default(ACTIVE)
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  major       Major     @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  
+  enrolledAt  DateTime  @default(now())
+  
+  @@unique([userId, majorId])
+  @@index([userId])
+  @@index([majorId])
+  @@map("enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+// Tiến độ học bài
+model LessonProgress {
+  id              String    @id @default(uuid())
+  userId          String
+  lessonId        String
+  
+  watchTime       Int       @default(0) // Thời gian đã xem (minutes)
+  completed       Boolean   @default(false)
+  completedAt     DateTime?
+  
+  // Face verification tracking (implement cuối)
+  faceVerifiedBefore Boolean @default(false)
+  faceVerifiedAfter  Boolean @default(false)
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson          Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+// ============================================
+// EXAM SYSTEM
+// ============================================
+
+model Exam {
+  id              String    @id @default(uuid())
+  subjectId       String
+  name            String
+  description     String?   @db.Text
+  duration        Int       // Thời gian làm bài (minutes)
+  passingScore    Float     @default(60) // Điểm đạt (%)
+  order           Int       @default(0)
+  isActive        Boolean   @default(true)
+  
+  // Gating: Phải pass exam này mới học tiếp
+  isRequired      Boolean   @default(false)
+  
+  subject         Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions       ExamQuestion[]
+  attempts        ExamAttempt[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([subjectId])
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id              String    @id @default(uuid())
+  examId          String
+  question        String    @db.Text
+  type            QuestionType @default(MULTIPLE_CHOICE)
+  
+  // Multiple choice options (JSON: ["A", "B", "C", "D"])
+  options         String?   @db.Text
+  correctAnswer   String    @db.Text // For MC: "A", for essay: sample answer
+  points          Float     @default(1)
+  order           Int       @default(0)
+  
+  exam            Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([examId])
+  @@map("exam_questions")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  ESSAY
+}
+
+model ExamAttempt {
+  id              String    @id @default(uuid())
+  userId          String
+  examId          String
+  
+  answers         String?   @db.LongText // JSON: {questionId: answer}
+  score           Float?
+  passed          Boolean   @default(false)
+  status          ExamStatus @default(IN_PROGRESS)
+  
+  // Face verification (implement cuối)
+  faceVerifiedStart Boolean @default(false)
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam            Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  
+  @@index([userId])
+  @@index([examId])
+  @@map("exam_attempts")
+}
+
+enum ExamStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+// ============================================
+// COMMUNITY FEATURES
+// ============================================
+
+// Blog posts
+model BlogPost {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String
+  content     String    @db.LongText
+  imageUrl    String?
+  published   Boolean   @default(true)
+  views       Int       @default(0)
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  tags        BlogPostTag[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([userId])
+  @@map("blog_posts")
+}
+
+// Q&A System
+model Question {
+  id          String    @id @default(uuid())
+  userId      String
+  subjectId   String?
+  lessonId    String?
+  
+  title       String
+  content     String    @db.LongText
+  views       Int       @default(0)
+  status      QuestionStatus @default(OPEN)
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  lesson      Lesson?   @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  answers     Answer[]
+  tags        QuestionTag[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([subjectId])
+  @@index([lessonId])
+  @@map("questions")
+}
+
+enum QuestionStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+model Answer {
+  id          String    @id @default(uuid())
+  questionId  String
+  userId      String
+  content     String    @db.LongText
+  isAccepted  Boolean   @default(false)
+  
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([questionId])
+  @@index([userId])
+  @@map("answers")
+}
+
+// Tag system for Q&A
+model Tag {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  
+  questions   QuestionTag[]
+  blogPosts   BlogPostTag[]
+  
+  createdAt   DateTime  @default(now())
+  
+  @@map("tags")
+}
+
+model BlogPostTag {
+  blogPostId  String
+  tagId       String
+  
+  blogPost    BlogPost  @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([blogPostId, tagId])
+  @@map("blog_post_tags")
+}
+
+model QuestionTag {
+  questionId  String
+  tagId       String
+  
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([questionId, tagId])
+  @@index([questionId])
+  @@index([tagId])
+  @@map("question_tags")
+}
+
+// Comments (for blog posts)
+model Comment {
+  id          String    @id @default(uuid())
+  postId      String
+  userId      String
+  content     String    @db.Text
+  
+  post        BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}

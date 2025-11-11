@@ -1,0 +1,533 @@
+{
+	"info": {
+		"_postman_id": "face-recognition-tests-2024",
+		"name": "Face Recognition API Tests",
+		"description": "Test collection cho Face Recognition APIs trong v3 Learning Platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Setup - Login Student",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set('authToken', jsonData.token);",
+							"    pm.environment.set('userId', jsonData.user.id);",
+							"    pm.test('Login successful', function() {",
+							"        pm.expect(jsonData.token).to.not.be.empty;",
+							"    });",
+							"} else {",
+							"    pm.test('Login failed', function() {",
+							"        pm.expect.fail('Login failed with status ' + pm.response.code);",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"password123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Login để lấy JWT token cho các test tiếp theo"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Face Status (Before Registration)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Face not registered yet', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.be.true;",
+							"    pm.expect(jsonData.data.user.faceRegistered).to.be.false;",
+							"    pm.expect(jsonData.data.modelsLoaded).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/face/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"face",
+						"status"
+					]
+				},
+				"description": "Kiểm tra status trước khi đăng ký face - Expected: faceRegistered = false"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Register Face",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Face registered successfully', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.be.true;",
+							"    pm.expect(jsonData.data.user.faceRegistered).to.be.true;",
+							"    pm.expect(jsonData.data.user.faceEmbedding).to.not.be.null;",
+							"});",
+							"",
+							"pm.test('Response time < 5000ms', function() {",
+							"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/path/to/your/face/image.jpg",
+							"description": "⚠️ Thay bằng đường dẫn ảnh thật của bạn!"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/auth/register-face",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register-face"
+					]
+				},
+				"description": "Đăng ký khuôn mặt cho user hiện tại\n\n⚠️ **LƯU Ý:** Phải upload ảnh thật có khuôn mặt rõ ràng!"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Face Status (After Registration)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Face is now registered', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.be.true;",
+							"    pm.expect(jsonData.data.user.faceRegistered).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/face/status",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"face",
+						"status"
+					]
+				},
+				"description": "Kiểm tra lại status sau khi đăng ký - Expected: faceRegistered = true"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Verify Face (Same Person)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Face verified successfully', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.be.true;",
+							"    pm.expect(jsonData.data.verified).to.be.true;",
+							"    pm.expect(jsonData.data.confidence).to.match(/^\\d+\\.\\d+%$/);",
+							"});",
+							"",
+							"pm.test('High confidence match', function() {",
+							"    var jsonData = pm.response.json();",
+							"    var confidence = parseFloat(jsonData.data.confidence);",
+							"    pm.expect(confidence).to.be.above(80);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/path/to/same/person/face.jpg",
+							"description": "⚠️ Upload ảnh CÙNG NGƯỜI với ảnh đăng ký!"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/face/verify",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"face",
+						"verify"
+					]
+				},
+				"description": "Verify với ảnh cùng người - Expected: verified = true, confidence > 80%"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Verify Face (Different Person - Should Fail)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 401 (Unauthorized)', function() {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							"pm.test('Face not matched', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.success).to.be.false;",
+							"    pm.expect(jsonData.message).to.include('không khớp');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/path/to/different/person/face.jpg",
+							"description": "⚠️ Upload ảnh NGƯỜI KHÁC để test detection!"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/face/verify",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"face",
+						"verify"
+					]
+				},
+				"description": "Verify với ảnh người khác - Expected: status 401, verified = false"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Start Lesson (Set faceVerifiedBefore)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Lesson started with faceVerifiedBefore', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.progress.faceVerifiedBefore).to.be.true;",
+							"    pm.environment.set('lessonProgressId', jsonData.data.progress.id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"lessonId\": \"{{testLessonId}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/progress/lessons/{{testLessonId}}/start",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"progress",
+						"lessons",
+						"{{testLessonId}}",
+						"start"
+					]
+				},
+				"description": "⚠️ Cần set biến `testLessonId` trong environment!\n\nBắt đầu lesson → Set faceVerifiedBefore = true"
+			},
+			"response": []
+		},
+		{
+			"name": "8. Update Watch Time (to 2/3)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Watch time updated', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.progress.watchTime).to.be.above(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"watchTime\": 400\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/progress/lessons/{{testLessonId}}/update-watch-time",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"progress",
+						"lessons",
+						"{{testLessonId}}",
+						"update-watch-time"
+					]
+				},
+				"description": "Update watch time lên 400s (giả sử duration = 600s → 2/3 = 400s)"
+			},
+			"response": []
+		},
+		{
+			"name": "9. Verify After 2/3 (Set faceVerifiedAfter)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('faceVerifiedAfter is set', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.progress.faceVerifiedAfter).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/progress/lessons/{{testLessonId}}/verify-after",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"progress",
+						"lessons",
+						"{{testLessonId}}",
+						"verify-after"
+					]
+				},
+				"description": "⭐ API MỚI - Verify sau khi xem 2/3 lesson → Set faceVerifiedAfter = true"
+			},
+			"response": []
+		},
+		{
+			"name": "10. Complete Lesson (Check Both Verifications)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Lesson completed successfully', function() {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data.progress.completed).to.be.true;",
+							"    pm.expect(jsonData.data.progress.faceVerifiedBefore).to.be.true;",
+							"    pm.expect(jsonData.data.progress.faceVerifiedAfter).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/progress/lessons/{{testLessonId}}/complete",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"progress",
+						"lessons",
+						"{{testLessonId}}",
+						"complete"
+					]
+				},
+				"description": "Complete lesson - Phải có cả faceVerifiedBefore VÀ faceVerifiedAfter = true"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}

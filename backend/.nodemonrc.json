@@ -1,0 +1,17 @@
+{
+  "watch": [
+    "controllers",
+    "middleware",
+    "routes",
+    "utils",
+    "server.js"
+  ],
+  "ignore": [
+    "node_modules",
+    "uploads",
+    "prisma/migrations",
+    ".env"
+  ],
+  "ext": "js,json",
+  "delay": "1000"
+}
