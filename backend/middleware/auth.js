@@ -89,6 +89,90 @@ const requireAdmin = (req, res, next) => {
 };
 
 /**
+ * Middleware kiểm tra role teacher
+ */
+const requireTeacher = (req, res, next) => {
+  if (req.user.role !== 'TEACHER') {
+    return res.status(403).json({
+      success: false,
+      message: 'Chỉ giáo viên mới có quyền truy cập'
+    });
+  }
+  next();
+};
+
+/**
+ * Middleware kiểm tra role teacher hoặc admin
+ */
+const requireTeacherOrAdmin = (req, res, next) => {
+  if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền truy cập'
+    });
+  }
+  next();
+};
+
+/**
+ * Middleware kiểm tra teacher có quyền quản lý subject không
+ * Phải được dùng sau auth middleware
+ */
+const requireSubjectTeacher = async (req, res, next) => {
+  try {
+    // Admin có toàn quyền
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    // Teacher chỉ được quản lý môn học của mình
+    if (req.user.role === 'TEACHER') {
+      const subjectId = req.params.subjectId || req.body.subjectId;
+      
+      if (!subjectId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Không tìm thấy subjectId'
+        });
+      }
+
+      const subject = await prisma.subject.findUnique({
+        where: { id: subjectId },
+        select: { teacherId: true }
+      });
+
+      if (!subject) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy môn học'
+        });
+      }
+
+      if (subject.teacherId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không phụ trách môn học này'
+        });
+      }
+
+      return next();
+    }
+
+    // User thường không có quyền
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền truy cập'
+    });
+  } catch (error) {
+    console.error('requireSubjectTeacher error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi kiểm tra quyền'
+    });
+  }
+};
+
+/**
  * Optional auth - không bắt buộc đăng nhập nhưng nếu có token thì attach user
  */
 const optionalAuth = async (req, res, next) => {
@@ -128,5 +212,8 @@ const optionalAuth = async (req, res, next) => {
 module.exports = {
   auth,
   requireAdmin,
+  requireTeacher,
+  requireTeacherOrAdmin,
+  requireSubjectTeacher,
   optionalAuth
 };

@@ -3,6 +3,32 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
+ * Helper: Kiểm tra teacher có quyền quản lý subject không
+ */
+const checkTeacherPermission = async (userId, role, subjectId) => {
+  if (role === 'ADMIN') return { allowed: true };
+  
+  if (role === 'TEACHER') {
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { teacherId: true, name: true }
+    });
+    
+    if (!subject) {
+      return { allowed: false, error: 'Môn học không tồn tại', status: 404 };
+    }
+    
+    if (subject.teacherId !== userId) {
+      return { allowed: false, error: 'Bạn không phụ trách môn học này', status: 403 };
+    }
+    
+    return { allowed: true };
+  }
+  
+  return { allowed: false, error: 'Bạn không có quyền truy cập', status: 403 };
+};
+
+/**
  * List lessons with filters
  */
 exports.listLessons = async (req, res) => {
@@ -96,6 +122,12 @@ exports.createLesson = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc' });
     }
     
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
+    }
+    
     // Check subject exists
     const subject = await prisma.subject.findUnique({ where: { id: subjectId } });
     if (!subject) {
@@ -145,9 +177,18 @@ exports.updateLesson = async (req, res) => {
     const { id } = req.params;
     const { name, description, videoUrl, duration, prerequisiteId, order, isActive } = req.body;
     
-    const lesson = await prisma.lesson.findUnique({ where: { id } });
+    const lesson = await prisma.lesson.findUnique({ 
+      where: { id },
+      include: { subject: { select: { id: true, teacherId: true } } }
+    });
     if (!lesson) {
       return res.status(404).json({ success: false, message: 'Bài học không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, lesson.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
     
     // Check prerequisite
@@ -206,6 +247,12 @@ exports.deleteLesson = async (req, res) => {
     
     if (!lesson) {
       return res.status(404).json({ success: false, message: 'Bài học không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, lesson.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
     
     if (lesson._count.dependentLessons > 0) {

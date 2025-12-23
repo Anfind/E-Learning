@@ -2,6 +2,43 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+/**
+ * Helper: Kiểm tra teacher có quyền quản lý subject không
+ */
+const checkTeacherPermission = async (userId, role, subjectId) => {
+  if (role === 'ADMIN') return { allowed: true };
+  
+  if (role === 'TEACHER') {
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { teacherId: true, name: true }
+    });
+    
+    if (!subject) {
+      return { allowed: false, error: 'Môn học không tồn tại', status: 404 };
+    }
+    
+    if (subject.teacherId !== userId) {
+      return { allowed: false, error: 'Bạn không phụ trách môn học này', status: 403 };
+    }
+    
+    return { allowed: true };
+  }
+  
+  return { allowed: false, error: 'Bạn không có quyền truy cập', status: 403 };
+};
+
+/**
+ * Helper: Lấy subjectId từ examId
+ */
+const getSubjectIdFromExam = async (examId) => {
+  const exam = await prisma.exam.findUnique({
+    where: { id: examId },
+    select: { subjectId: true }
+  });
+  return exam?.subjectId;
+};
+
 // List exams
 exports.listExams = async (req, res) => {
   try {
@@ -103,6 +140,12 @@ exports.createExam = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc' });
     }
     
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
+    }
+    
     const subject = await prisma.subject.findUnique({ where: { id: subjectId } });
     if (!subject) {
       return res.status(404).json({ success: false, message: 'Môn học không tồn tại' });
@@ -146,6 +189,12 @@ exports.addQuestions = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
     }
     
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
+    }
+    
     const createdQuestions = await prisma.examQuestion.createMany({
       data: questions.map((q, index) => ({
         examId: id,
@@ -178,6 +227,12 @@ exports.updateExam = async (req, res) => {
     const exam = await prisma.exam.findUnique({ where: { id } });
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
     
     const updateData = {};
@@ -222,6 +277,12 @@ exports.deleteExam = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
     }
     
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
+    }
+    
     if (exam._count.attempts > 0) {
       return res.status(400).json({
         success: false,
@@ -240,7 +301,7 @@ exports.deleteExam = async (req, res) => {
 
 // @desc    Update a single question
 // @route   PATCH /api/exams/:id/questions/:questionId
-// @access  Private (Admin)
+// @access  Private (Admin/Teacher)
 exports.updateQuestion = async (req, res) => {
   try {
     const { id: examId, questionId } = req.params;
@@ -250,6 +311,12 @@ exports.updateQuestion = async (req, res) => {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
 
     // Verify question exists and belongs to exam
@@ -289,7 +356,7 @@ exports.updateQuestion = async (req, res) => {
 
 // @desc    Delete a single question
 // @route   DELETE /api/exams/:id/questions/:questionId
-// @access  Private (Admin)
+// @access  Private (Admin/Teacher)
 exports.deleteQuestion = async (req, res) => {
   try {
     const { id: examId, questionId } = req.params;
@@ -298,6 +365,12 @@ exports.deleteQuestion = async (req, res) => {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
 
     // Verify question exists and belongs to exam
@@ -320,7 +393,7 @@ exports.deleteQuestion = async (req, res) => {
 
 // @desc    Reorder questions (batch update)
 // @route   PATCH /api/exams/:id/questions/reorder
-// @access  Private (Admin)
+// @access  Private (Admin/Teacher)
 exports.reorderQuestions = async (req, res) => {
   try {
     const { id: examId } = req.params;
@@ -337,6 +410,12 @@ exports.reorderQuestions = async (req, res) => {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) {
       return res.status(404).json({ success: false, message: 'Bài thi không tồn tại' });
+    }
+    
+    // Kiểm tra quyền teacher với môn học
+    const permCheck = await checkTeacherPermission(req.user.id, req.user.role, exam.subjectId);
+    if (!permCheck.allowed) {
+      return res.status(permCheck.status).json({ success: false, message: permCheck.error });
     }
 
     // Batch update using transaction

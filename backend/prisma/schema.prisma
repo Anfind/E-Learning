@@ -41,6 +41,7 @@ model User {
   questions       Question[]
   answers         Answer[]
   comments        Comment[]
+  teacherSubjects Subject[]     // Các môn học mà giáo viên phụ trách
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -53,6 +54,7 @@ model User {
 enum Role {
   USER
   ADMIN
+  TEACHER
 }
 
 enum UserStatus {
@@ -88,6 +90,7 @@ model Major {
 model Subject {
   id              String    @id @default(uuid())
   majorId         String
+  teacherId       String?   // Giáo viên phụ trách môn học (1 môn chỉ có 1 GV)
   name            String
   description     String?   @db.Text
   imageUrl        String?
@@ -100,6 +103,7 @@ model Subject {
   dependentSubjects Subject[] @relation("SubjectPrerequisite")
   
   major           Major     @relation(fields: [majorId], references: [id], onDelete: Cascade)
+  teacher         User?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   lessons         Lesson[]
   exams           Exam[]
   questions       Question[]
@@ -108,6 +112,7 @@ model Subject {
   updatedAt       DateTime  @updatedAt
   
   @@index([majorId])
+  @@index([teacherId])
   @@index([prerequisiteId])
   @@map("subjects")
 }

@@ -133,6 +133,116 @@ async function main() {
 
   console.log('✓ Created 8 demo users with password: 123456');
 
+  // 2.5. Create Teacher users
+  console.log('\n👨‍🏫 Creating teacher users...');
+  const teacherPassword = await bcrypt.hash('teacher123', 10);
+  
+  const teacher1 = await prisma.user.upsert({
+    where: { email: 'teacher1@example.com' },
+    update: {},
+    create: {
+      email: 'teacher1@example.com',
+      password: teacherPassword,
+      name: 'Nguyễn Văn Thầy',
+      phone: '0911111111',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher2 = await prisma.user.upsert({
+    where: { email: 'teacher2@example.com' },
+    update: {},
+    create: {
+      email: 'teacher2@example.com',
+      password: teacherPassword,
+      name: 'Trần Thị Cô',
+      phone: '0922222222',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher3 = await prisma.user.upsert({
+    where: { email: 'teacher3@example.com' },
+    update: {},
+    create: {
+      email: 'teacher3@example.com',
+      password: teacherPassword,
+      name: 'Lê Văn Giảng',
+      phone: '0933333333',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher4 = await prisma.user.upsert({
+    where: { email: 'teacher4@example.com' },
+    update: {},
+    create: {
+      email: 'teacher4@example.com',
+      password: teacherPassword,
+      name: 'Phạm Thị Dạy',
+      phone: '0944444444',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher5 = await prisma.user.upsert({
+    where: { email: 'teacher5@example.com' },
+    update: {},
+    create: {
+      email: 'teacher5@example.com',
+      password: teacherPassword,
+      name: 'Hoàng Minh Tuấn',
+      phone: '0955555555',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher6 = await prisma.user.upsert({
+    where: { email: 'teacher6@example.com' },
+    update: {},
+    create: {
+      email: 'teacher6@example.com',
+      password: teacherPassword,
+      name: 'Ngô Thị Hương',
+      phone: '0966666666',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher7 = await prisma.user.upsert({
+    where: { email: 'teacher7@example.com' },
+    update: {},
+    create: {
+      email: 'teacher7@example.com',
+      password: teacherPassword,
+      name: 'Đặng Văn Khoa',
+      phone: '0977777777',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  const teacher8 = await prisma.user.upsert({
+    where: { email: 'teacher8@example.com' },
+    update: {},
+    create: {
+      email: 'teacher8@example.com',
+      password: teacherPassword,
+      name: 'Vũ Thị Mai',
+      phone: '0988888888',
+      role: 'TEACHER',
+      status: 'ACTIVE'
+    }
+  });
+
+  console.log('✓ Created 8 teachers with password: teacher123');
+
   // 3. Create Majors
   console.log('\n🎓 Creating majors...');
   const major1 = await prisma.major.create({
@@ -183,7 +293,55 @@ async function main() {
     }
   });
 
-  console.log('✓ Created 6 majors');
+  const major7 = await prisma.major.create({
+    data: {
+      name: 'An ninh mạng',
+      description: 'Ngành đào tạo về bảo mật hệ thống, mã hóa và phòng chống tấn công mạng',
+      order: 7
+    }
+  });
+
+  const major8 = await prisma.major.create({
+    data: {
+      name: 'Trí tuệ nhân tạo',
+      description: 'Ngành đào tạo chuyên sâu về AI, Deep Learning và Computer Vision',
+      order: 8
+    }
+  });
+
+  const major9 = await prisma.major.create({
+    data: {
+      name: 'Kinh tế số',
+      description: 'Ngành đào tạo về kinh tế trong thời đại số, thương mại điện tử',
+      order: 9
+    }
+  });
+
+  const major10 = await prisma.major.create({
+    data: {
+      name: 'Ngôn ngữ Anh',
+      description: 'Ngành đào tạo về tiếng Anh chuyên ngành, biên phiên dịch',
+      order: 10
+    }
+  });
+
+  const major11 = await prisma.major.create({
+    data: {
+      name: 'Marketing số',
+      description: 'Ngành đào tạo về Digital Marketing, SEO, Social Media Marketing',
+      order: 11
+    }
+  });
+
+  const major12 = await prisma.major.create({
+    data: {
+      name: 'Kế toán - Tài chính',
+      description: 'Ngành đào tạo về kế toán doanh nghiệp, tài chính và đầu tư',
+      order: 12
+    }
+  });
+
+  console.log('✓ Created 12 majors');
 
   // 4. Create Subjects
   console.log('\n📚 Creating subjects...');
@@ -192,6 +350,7 @@ async function main() {
   const subject1 = await prisma.subject.create({
     data: {
       majorId: major1.id,
+      teacherId: teacher1.id,
       name: 'Lập trình cơ bản',
       description: 'Học các khái niệm cơ bản về lập trình, biến, hàm, vòng lặp',
       order: 1
@@ -201,6 +360,7 @@ async function main() {
   const subject2 = await prisma.subject.create({
     data: {
       majorId: major1.id,
+      teacherId: teacher1.id,
       name: 'Cấu trúc dữ liệu và giải thuật',
       description: 'Học về mảng, linked list, stack, queue, tree và các thuật toán tìm kiếm, sắp xếp',
       prerequisiteId: subject1.id,
@@ -211,6 +371,7 @@ async function main() {
   const subject3 = await prisma.subject.create({
     data: {
       majorId: major1.id,
+      teacherId: teacher2.id,
       name: 'Lập trình hướng đối tượng',
       description: 'Tìm hiểu về OOP: class, object, inheritance, polymorphism',
       prerequisiteId: subject1.id,
@@ -221,6 +382,7 @@ async function main() {
   const subject4 = await prisma.subject.create({
     data: {
       majorId: major1.id,
+      teacherId: teacher2.id,
       name: 'Phát triển Web',
       description: 'HTML, CSS, JavaScript và các framework hiện đại',
       prerequisiteId: subject1.id,
@@ -232,6 +394,7 @@ async function main() {
   const subject5 = await prisma.subject.create({
     data: {
       majorId: major2.id,
+      teacherId: teacher3.id,
       name: 'Giải tích 1',
       description: 'Học về đạo hàm, tích phân, chuỗi số',
       order: 1
@@ -241,6 +404,7 @@ async function main() {
   const subject6 = await prisma.subject.create({
     data: {
       majorId: major2.id,
+      teacherId: teacher3.id,
       name: 'Đại số tuyến tính',
       description: 'Ma trận, định thức, không gian vector',
       order: 2
@@ -251,6 +415,7 @@ async function main() {
   const subject7 = await prisma.subject.create({
     data: {
       majorId: major3.id,
+      teacherId: teacher4.id,
       name: 'Python cho Data Science',
       description: 'Học Python, NumPy, Pandas để phân tích dữ liệu',
       order: 1
@@ -260,6 +425,7 @@ async function main() {
   const subject8 = await prisma.subject.create({
     data: {
       majorId: major3.id,
+      teacherId: teacher4.id,
       name: 'Machine Learning cơ bản',
       description: 'Các thuật toán ML: Linear Regression, Decision Tree, Neural Network',
       prerequisiteId: subject7.id,
@@ -271,6 +437,7 @@ async function main() {
   const subject9 = await prisma.subject.create({
     data: {
       majorId: major4.id,
+      teacherId: teacher5.id,
       name: 'Nguyên lý thiết kế',
       description: 'Color theory, typography, layout và composition',
       order: 1
@@ -280,6 +447,7 @@ async function main() {
   const subject10 = await prisma.subject.create({
     data: {
       majorId: major4.id,
+      teacherId: teacher5.id,
       name: 'UI/UX Design',
       description: 'Thiết kế giao diện người dùng và trải nghiệm người dùng',
       prerequisiteId: subject9.id,
@@ -287,7 +455,281 @@ async function main() {
     }
   });
 
-  console.log('✓ Created 10 subjects across 4 majors');
+  // Quản trị kinh doanh subjects (major5)
+  const subject11 = await prisma.subject.create({
+    data: {
+      majorId: major5.id,
+      teacherId: teacher6.id,
+      name: 'Quản trị học',
+      description: 'Các nguyên tắc cơ bản về quản trị và tổ chức doanh nghiệp',
+      order: 1
+    }
+  });
+
+  const subject12 = await prisma.subject.create({
+    data: {
+      majorId: major5.id,
+      teacherId: teacher6.id,
+      name: 'Marketing căn bản',
+      description: 'Các khái niệm cơ bản về marketing, nghiên cứu thị trường',
+      order: 2
+    }
+  });
+
+  const subject13 = await prisma.subject.create({
+    data: {
+      majorId: major5.id,
+      teacherId: teacher6.id,
+      name: 'Quản trị nhân sự',
+      description: 'Quản lý nguồn nhân lực, tuyển dụng, đào tạo và phát triển',
+      prerequisiteId: subject11.id,
+      order: 3
+    }
+  });
+
+  // Kỹ thuật phần mềm subjects (major6)
+  const subject14 = await prisma.subject.create({
+    data: {
+      majorId: major6.id,
+      teacherId: teacher1.id,
+      name: 'Quy trình phát triển phần mềm',
+      description: 'Agile, Scrum, Waterfall và các phương pháp quản lý dự án',
+      order: 1
+    }
+  });
+
+  const subject15 = await prisma.subject.create({
+    data: {
+      majorId: major6.id,
+      teacherId: teacher2.id,
+      name: 'Kiểm thử phần mềm',
+      description: 'Unit test, Integration test, E2E test và automation testing',
+      prerequisiteId: subject14.id,
+      order: 2
+    }
+  });
+
+  const subject16 = await prisma.subject.create({
+    data: {
+      majorId: major6.id,
+      teacherId: teacher2.id,
+      name: 'DevOps và CI/CD',
+      description: 'Docker, Kubernetes, Jenkins, GitHub Actions',
+      prerequisiteId: subject15.id,
+      order: 3
+    }
+  });
+
+  // An ninh mạng subjects (major7)
+  const subject17 = await prisma.subject.create({
+    data: {
+      majorId: major7.id,
+      teacherId: teacher7.id,
+      name: 'Cơ sở an ninh mạng',
+      description: 'Các khái niệm cơ bản về bảo mật, mã hóa và xác thực',
+      order: 1
+    }
+  });
+
+  const subject18 = await prisma.subject.create({
+    data: {
+      majorId: major7.id,
+      teacherId: teacher7.id,
+      name: 'Ethical Hacking',
+      description: 'Kỹ thuật penetration testing và phát hiện lỗ hổng bảo mật',
+      prerequisiteId: subject17.id,
+      order: 2
+    }
+  });
+
+  const subject19 = await prisma.subject.create({
+    data: {
+      majorId: major7.id,
+      teacherId: teacher7.id,
+      name: 'Bảo mật ứng dụng web',
+      description: 'OWASP Top 10, SQL Injection, XSS và cách phòng chống',
+      prerequisiteId: subject17.id,
+      order: 3
+    }
+  });
+
+  // Trí tuệ nhân tạo subjects (major8)
+  const subject20 = await prisma.subject.create({
+    data: {
+      majorId: major8.id,
+      teacherId: teacher4.id,
+      name: 'Deep Learning',
+      description: 'Neural Networks, CNN, RNN và các kiến trúc hiện đại',
+      order: 1
+    }
+  });
+
+  const subject21 = await prisma.subject.create({
+    data: {
+      majorId: major8.id,
+      teacherId: teacher4.id,
+      name: 'Computer Vision',
+      description: 'Xử lý ảnh, nhận dạng đối tượng, face recognition',
+      prerequisiteId: subject20.id,
+      order: 2
+    }
+  });
+
+  const subject22 = await prisma.subject.create({
+    data: {
+      majorId: major8.id,
+      teacherId: teacher4.id,
+      name: 'Natural Language Processing',
+      description: 'Xử lý ngôn ngữ tự nhiên, chatbot, sentiment analysis',
+      prerequisiteId: subject20.id,
+      order: 3
+    }
+  });
+
+  // Kinh tế số subjects (major9)
+  const subject23 = await prisma.subject.create({
+    data: {
+      majorId: major9.id,
+      teacherId: teacher6.id,
+      name: 'Kinh tế học đại cương',
+      description: 'Vi mô, vĩ mô và các nguyên lý kinh tế cơ bản',
+      order: 1
+    }
+  });
+
+  const subject24 = await prisma.subject.create({
+    data: {
+      majorId: major9.id,
+      teacherId: teacher6.id,
+      name: 'Thương mại điện tử',
+      description: 'E-commerce, thanh toán trực tuyến và logistics',
+      prerequisiteId: subject23.id,
+      order: 2
+    }
+  });
+
+  // Ngôn ngữ Anh subjects (major10)
+  const subject25 = await prisma.subject.create({
+    data: {
+      majorId: major10.id,
+      teacherId: teacher8.id,
+      name: 'Tiếng Anh giao tiếp',
+      description: 'Kỹ năng nghe, nói trong giao tiếp hàng ngày',
+      order: 1
+    }
+  });
+
+  const subject26 = await prisma.subject.create({
+    data: {
+      majorId: major10.id,
+      teacherId: teacher8.id,
+      name: 'Tiếng Anh chuyên ngành IT',
+      description: 'Thuật ngữ và kỹ năng tiếng Anh trong lĩnh vực CNTT',
+      prerequisiteId: subject25.id,
+      order: 2
+    }
+  });
+
+  const subject27 = await prisma.subject.create({
+    data: {
+      majorId: major10.id,
+      teacherId: teacher8.id,
+      name: 'TOEIC Preparation',
+      description: 'Luyện thi TOEIC từ 500-900 điểm',
+      prerequisiteId: subject25.id,
+      order: 3
+    }
+  });
+
+  // Marketing số subjects (major11)
+  const subject28 = await prisma.subject.create({
+    data: {
+      majorId: major11.id,
+      teacherId: teacher5.id,
+      name: 'Digital Marketing căn bản',
+      description: 'Tổng quan về marketing số, các kênh và công cụ',
+      order: 1
+    }
+  });
+
+  const subject29 = await prisma.subject.create({
+    data: {
+      majorId: major11.id,
+      teacherId: teacher5.id,
+      name: 'SEO & SEM',
+      description: 'Tối ưu hóa công cụ tìm kiếm và quảng cáo Google Ads',
+      prerequisiteId: subject28.id,
+      order: 2
+    }
+  });
+
+  const subject30 = await prisma.subject.create({
+    data: {
+      majorId: major11.id,
+      teacherId: teacher5.id,
+      name: 'Social Media Marketing',
+      description: 'Marketing trên Facebook, Instagram, TikTok, LinkedIn',
+      prerequisiteId: subject28.id,
+      order: 3
+    }
+  });
+
+  const subject31 = await prisma.subject.create({
+    data: {
+      majorId: major11.id,
+      teacherId: teacher5.id,
+      name: 'Content Marketing',
+      description: 'Xây dựng chiến lược nội dung, copywriting và storytelling',
+      prerequisiteId: subject28.id,
+      order: 4
+    }
+  });
+
+  // Kế toán - Tài chính subjects (major12)
+  const subject32 = await prisma.subject.create({
+    data: {
+      majorId: major12.id,
+      teacherId: teacher6.id,
+      name: 'Nguyên lý kế toán',
+      description: 'Các nguyên tắc kế toán cơ bản, sổ sách và báo cáo tài chính',
+      order: 1
+    }
+  });
+
+  const subject33 = await prisma.subject.create({
+    data: {
+      majorId: major12.id,
+      teacherId: teacher6.id,
+      name: 'Kế toán doanh nghiệp',
+      description: 'Kế toán chi phí, doanh thu và quản lý tài sản',
+      prerequisiteId: subject32.id,
+      order: 2
+    }
+  });
+
+  const subject34 = await prisma.subject.create({
+    data: {
+      majorId: major12.id,
+      teacherId: teacher6.id,
+      name: 'Phân tích tài chính',
+      description: 'Phân tích báo cáo tài chính, định giá doanh nghiệp',
+      prerequisiteId: subject33.id,
+      order: 3
+    }
+  });
+
+  const subject35 = await prisma.subject.create({
+    data: {
+      majorId: major12.id,
+      teacherId: teacher6.id,
+      name: 'Thuế và luật kế toán',
+      description: 'Các quy định về thuế, luật kế toán Việt Nam',
+      prerequisiteId: subject32.id,
+      order: 4
+    }
+  });
+
+  console.log('✓ Created 35 subjects across 12 majors');
 
   // 5. Create Lessons
   console.log('\n📖 Creating lessons...');
