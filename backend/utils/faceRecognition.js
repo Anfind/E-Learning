@@ -196,8 +196,8 @@ async function extractFaceEmbedding(buffer, options = {}) {
     const detectStart = Date.now();
 
     const detectorOptions = new faceapi.TinyFaceDetectorOptions({
-      inputSize: 416,
-      scoreThreshold: 0.3  // ✅ Lower threshold for better detection (was 0.5)
+      inputSize: 320,        // ✅ Smaller inputSize for small images (was 416)
+      scoreThreshold: 0.1    // ✅ Very low threshold for better detection (was 0.3)
     });
 
     let descriptor;

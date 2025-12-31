@@ -17,7 +17,13 @@ import {
   Sparkles,
   FileText,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Clock,
+  Target,
+  Flame,
+  Play,
+  GraduationCap,
+  ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
@@ -27,41 +33,117 @@ interface SubjectProgress {
     id: string;
     name: string;
     description: string;
-    totalLessons: number;
-    totalExams: number;
+    majorName: string;
   };
-  lessons: {
-    total: number;
-    completed: number;
-    percent: number;
-    list: Array<{
-      id: string;
-      title: string;
-      completed: boolean;
-      completedAt: string | null;
-      order: number;
-    }>;
+  progress: {
+    completedLessons: number;
+    totalLessons: number;
+    lessonProgress: number;
+    totalHours: number;
+    totalMinutes: number;
   };
   exams: {
+    taken: number;
     total: number;
-    passed: number;
     avgScore: number;
-    list: Array<{
-      attemptId: string;
-      examName: string;
+    history: Array<{
+      id: string;
+      examId: string;
       score: number;
       passed: boolean;
       submittedAt: string;
     }>;
   };
-  timeline: Array<{
-    date: string;
-    lessonsCompleted: number;
-    examsCompleted: number;
-    examsPassed: number;
+  timeline: {
+    startDate: string | null;
+    lessonsPerWeek: number;
+    estimatedCompletion: string | null;
+  };
+  lessons: Array<{
+    id: string;
+    name: string;
+    duration: number;
+    order: number;
+    completed: boolean;
+    watchTime: number;
+    completedAt: string | null;
   }>;
-  estimatedCompletion: string | null;
-  lastActivity: string | null;
+}
+
+// Enhanced Stat Card with gradient and animation
+function StatCard({ 
+  title, 
+  value, 
+  subtitle, 
+  icon: Icon, 
+  gradient = 'from-blue-500 to-blue-600'
+}: { 
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ElementType;
+  gradient?: string;
+}) {
+  return (
+    <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-10`} />
+      <CardContent className="p-6 relative">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+            <p className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+            )}
+          </div>
+          <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}>
+            <Icon className="h-6 w-6 text-white" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Progress Ring Component
+function ProgressRing({ progress, size = 120 }: { progress: number; size?: number }) {
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          className="text-white/20"
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          className="text-white transition-all duration-1000 ease-out"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl font-bold text-white">{progress}%</span>
+      </div>
+    </div>
+  );
 }
 
 export default function SubjectProgressPage() {
@@ -100,13 +182,13 @@ export default function SubjectProgressPage() {
         reportType: 'subject',
         reportData: {
           subjectName: progress.subject.name,
-          lessonsCompleted: progress.lessons.completed,
-          totalLessons: progress.lessons.total,
-          lessonPercent: progress.lessons.percent,
-          examsPassed: progress.exams.passed,
+          lessonsCompleted: progress.progress.completedLessons,
+          totalLessons: progress.progress.totalLessons,
+          lessonPercent: progress.progress.lessonProgress,
+          examsTaken: progress.exams.taken,
           totalExams: progress.exams.total,
           avgScore: progress.exams.avgScore,
-          estimatedCompletion: progress.estimatedCompletion
+          estimatedCompletion: progress.timeline.estimatedCompletion
         }
       });
       setAiInsight(response.insights);
@@ -119,311 +201,352 @@ export default function SubjectProgressPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+            </div>
+            <p className="text-muted-foreground animate-pulse">Đang tải dữ liệu...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!progress) {
     return (
-      <div className="container max-w-5xl py-6">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-2">Không tìm thấy môn học</h3>
-            <Link href="/dashboard/analytics">
-              <Button>Quay lại</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
+        <Header />
+        <div className="container max-w-5xl py-12">
+          <Card className="border-0 shadow-xl">
+            <CardContent className="py-16 text-center">
+              <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Không tìm thấy môn học</h3>
+              <p className="text-muted-foreground mb-6">Môn học này không tồn tại hoặc bạn chưa đăng ký</p>
+              <Link href="/dashboard/analytics">
+                <Button size="lg" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Quay lại Analytics
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
+  const passedExams = progress.exams.history.filter(e => e.passed).length;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
       <Header />
-      <main className="flex-1">
-        <div className="container max-w-5xl py-6 space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/analytics">
-              <Button variant="ghost" size="icon">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold">📚 {progress.subject.name}</h1>
-              <p className="text-muted-foreground line-clamp-1">
-                {progress.subject.description || 'Tiến trình học tập'}
-              </p>
+      
+      <main className="container mx-auto max-w-6xl py-8 px-4 md:px-8 space-y-8">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow-2xl">
+          <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,rgba(255,255,255,0.5))]" />
+          <div className="relative">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <Link href="/dashboard/analytics">
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                </Link>
+                <div>
+                  <Badge className="bg-white/20 text-white border-0 mb-2">
+                    {progress.subject.majorName}
+                  </Badge>
+                  <h1 className="text-3xl font-bold mb-2">📚 {progress.subject.name}</h1>
+                  <p className="text-white/80 max-w-2xl">
+                    {progress.subject.description || 'Theo dõi tiến trình học tập của bạn'}
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:block">
+                <ProgressRing progress={progress.progress.lessonProgress} />
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Overview Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Lessons Progress */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+        {/* Stats Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Bài học hoàn thành"
+            value={`${progress.progress.completedLessons}/${progress.progress.totalLessons}`}
+            subtitle={`${progress.progress.lessonProgress}% hoàn thành`}
+            icon={BookOpen}
+            gradient="from-blue-500 to-cyan-500"
+          />
+          <StatCard
+            title="Thời gian học"
+            value={`${progress.progress.totalHours}h ${progress.progress.totalMinutes}m`}
+            subtitle="Tổng thời gian"
+            icon={Clock}
+            gradient="from-green-500 to-emerald-500"
+          />
+          <StatCard
+            title="Điểm trung bình"
+            value={`${progress.exams.avgScore}%`}
+            subtitle={`${progress.exams.taken}/${progress.exams.total} bài thi`}
+            icon={Award}
+            gradient={progress.exams.avgScore >= 70 ? "from-green-500 to-emerald-500" : progress.exams.avgScore >= 50 ? "from-yellow-500 to-orange-500" : "from-red-500 to-pink-500"}
+          />
+          <StatCard
+            title="Tốc độ học"
+            value={progress.timeline.lessonsPerWeek}
+            subtitle="bài/tuần"
+            icon={Flame}
+            gradient="from-orange-500 to-red-500"
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Lessons List - Takes 2 columns */}
+          <Card className="lg:col-span-2 border-0 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BookOpen className="h-5 w-5 text-blue-600" />
+                    Danh sách bài học
+                  </CardTitle>
+                  <CardDescription>
+                    {progress.progress.completedLessons} / {progress.progress.totalLessons} bài học đã hoàn thành
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-white dark:bg-gray-900">
+                  {progress.progress.lessonProgress}%
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {(progress.lessons || [])
+                  .sort((a, b) => a.order - b.order)
+                  .map((lesson, index) => (
+                    <div
+                      key={lesson.id}
+                      className={`group flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-md ${
+                        lesson.completed
+                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 dark:from-green-950/30 dark:to-emerald-950/30 dark:border-green-800'
+                          : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800'
+                      }`}
+                    >
+                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${
+                        lesson.completed
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200 dark:shadow-green-900'
+                          : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 text-gray-500'
+                      }`}>
+                        {lesson.completed ? (
+                          <CheckCircle className="h-6 w-6" />
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold truncate ${lesson.completed ? 'text-green-700 dark:text-green-400' : ''}`}>
+                          {lesson.name}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {lesson.duration} phút
+                          </span>
+                          {lesson.completedAt && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(lesson.completedAt).toLocaleDateString('vi-VN')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {lesson.completed ? (
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 border-0">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Hoàn thành
+                        </Badge>
+                      ) : (
+                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="h-4 w-4 mr-1" />
+                          Học ngay
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Estimated Completion */}
+            <Card className="border-0 shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500 to-indigo-500 p-4">
+                <div className="flex items-center gap-3 text-white">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Target className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Bài học</p>
-                    <p className="text-2xl font-bold">
-                      {progress.lessons.completed}/{progress.lessons.total}
+                    <p className="text-sm text-white/80">Dự kiến hoàn thành</p>
+                    <p className="text-xl font-bold">
+                      {progress.timeline.estimatedCompletion 
+                        ? new Date(progress.timeline.estimatedCompletion).toLocaleDateString('vi-VN', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })
+                        : 'Chưa xác định'}
                     </p>
                   </div>
                 </div>
-                <Progress value={progress.lessons.percent} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {progress.lessons.percent}% hoàn thành
-                </p>
+              </div>
+              <CardContent className="p-4">
+                {progress.timeline.startDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Ngày bắt đầu</span>
+                    <span className="font-medium">
+                      {new Date(progress.timeline.startDate).toLocaleDateString('vi-VN')}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Exams Progress */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <Award className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Bài thi đã qua</p>
-                    <p className="text-2xl font-bold">
-                      {progress.exams.passed}/{progress.exams.total}
-                    </p>
-                  </div>
-                </div>
-                <Progress 
-                  value={progress.exams.total > 0 ? (progress.exams.passed / progress.exams.total) * 100 : 0} 
-                  className="h-2" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              Điểm TB: {progress.exams.avgScore}%
-            </p>
-          </CardContent>
-        </Card>
+            {/* Exams History */}
+            {(progress.exams.history || []).length > 0 && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <GraduationCap className="h-5 w-5 text-purple-600" />
+                    Lịch sử thi
+                  </CardTitle>
+                  <CardDescription>
+                    {passedExams}/{progress.exams.history.length} bài đậu
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {progress.exams.history.slice(0, 5).map((exam) => (
+                    <Link
+                      key={exam.id}
+                      href={`/dashboard/analytics/exams/${exam.id}`}
+                      className="block"
+                    >
+                      <div className={`p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${
+                        exam.passed
+                          ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 dark:border-green-800'
+                          : 'border-red-200 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30 dark:border-red-800'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">Bài thi #{exam.examId.slice(0, 8)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(exam.submittedAt).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-xl font-bold ${
+                              exam.passed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              {exam.score}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {progress.exams.history.length > 5 && (
+                    <Button variant="ghost" className="w-full text-muted-foreground">
+                      Xem thêm {progress.exams.history.length - 5} bài thi
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Estimated Completion */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            {/* Quick Stats */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  Thống kê nhanh
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tổng thời gian</span>
+                  <span className="font-bold">{progress.progress.totalHours}h {progress.progress.totalMinutes}m</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tốc độ học</span>
+                  <span className="font-bold">{progress.timeline.lessonsPerWeek} bài/tuần</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Tiến độ</span>
+                  <span className="font-bold">{progress.progress.lessonProgress}%</span>
+                </div>
+                <Progress value={progress.progress.lessonProgress} className="h-2" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* AI Insights */}
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-fuchsia-950/30 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl" />
+          <CardHeader className="relative">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-200 dark:shadow-purple-900">
+                <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Dự kiến hoàn thành</p>
-                <p className="text-xl font-bold">
-                  {progress.estimatedCompletion 
-                    ? new Date(progress.estimatedCompletion).toLocaleDateString('vi-VN')
-                    : 'Chưa xác định'}
-                </p>
+                <CardTitle className="text-xl">AI Đánh giá môn học</CardTitle>
+                <CardDescription>
+                  Phân tích và gợi ý học tập từ LearnHub AI
+                </CardDescription>
               </div>
             </div>
-            {progress.lastActivity && (
-              <p className="text-xs text-muted-foreground">
-                Hoạt động gần nhất: {new Date(progress.lastActivity).toLocaleDateString('vi-VN')}
-              </p>
+          </CardHeader>
+          <CardContent className="relative">
+            {aiInsight ? (
+              <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl p-6 shadow-inner">
+                <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">{aiInsight}</p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  Nhận đánh giá và gợi ý cải thiện từ AI
+                </p>
+                <Button 
+                  onClick={fetchAIInsight} 
+                  disabled={loadingAI}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900"
+                >
+                  {loadingAI ? (
+                    <>
+                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                      Đang phân tích...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-5 w-5 mr-2" />
+                      Lấy đánh giá AI
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Lessons List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Danh sách bài học
-          </CardTitle>
-          <CardDescription>
-            {progress.lessons.completed} / {progress.lessons.total} bài học đã hoàn thành
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {progress.lessons.list
-              .sort((a, b) => a.order - b.order)
-              .map((lesson, index) => (
-                <div
-                  key={lesson.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border ${
-                    lesson.completed
-                      ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-900'
-                      : 'bg-muted/30'
-                  }`}
-                >
-                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                    lesson.completed
-                      ? 'bg-green-100 dark:bg-green-900/30'
-                      : 'bg-muted'
-                  }`}>
-                    {lesson.completed ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <span className="text-sm text-muted-foreground">{index + 1}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium truncate ${lesson.completed ? '' : 'text-muted-foreground'}`}>
-                      {lesson.title}
-                    </p>
-                    {lesson.completedAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Hoàn thành: {new Date(lesson.completedAt).toLocaleDateString('vi-VN')}
-                      </p>
-                    )}
-                  </div>
-                  {lesson.completed && (
-                    <Badge variant="outline" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      Đã học
-                    </Badge>
-                  )}
-                </div>
-              ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Exams History */}
-      {progress.exams.list.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Lịch sử thi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {progress.exams.list.map((exam) => (
-                <Link
-                  key={exam.attemptId}
-                  href={`/dashboard/analytics/exams/${exam.attemptId}`}
-                  className="block"
-                >
-                  <div className={`p-4 rounded-lg border hover:shadow-md transition-shadow ${
-                    exam.passed
-                      ? 'border-green-200 dark:border-green-900'
-                      : 'border-red-200 dark:border-red-900'
-                  }`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{exam.examName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(exam.submittedAt).toLocaleDateString('vi-VN')}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${
-                          exam.passed ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {exam.score}%
-                        </p>
-                        <Badge variant={exam.passed ? 'default' : 'destructive'}>
-                          {exam.passed ? 'Đậu' : 'Chưa đạt'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Timeline */}
-      {progress.timeline.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Tiến trình theo thời gian
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-              
-              <div className="space-y-4">
-                {progress.timeline.map((day) => (
-                  <div key={day.date} className="relative flex items-start gap-4 pl-10">
-                    {/* Timeline dot */}
-                    <div className="absolute left-2.5 w-3 h-3 rounded-full bg-primary" />
-                    
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {new Date(day.date).toLocaleDateString('vi-VN', {
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long'
-                        })}
-                      </p>
-                      <div className="flex gap-4 mt-1 text-sm text-muted-foreground">
-                        {day.lessonsCompleted > 0 && (
-                          <span className="flex items-center gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            {day.lessonsCompleted} bài học
-                          </span>
-                        )}
-                        {day.examsCompleted > 0 && (
-                          <span className="flex items-center gap-1">
-                            <FileText className="h-3 w-3" />
-                            {day.examsCompleted} bài thi ({day.examsPassed} đậu)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* AI Insights */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            AI Đánh giá môn học
-          </CardTitle>
-          <CardDescription>
-            Gợi ý học tập từ LearnHub AI
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {aiInsight ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <p className="whitespace-pre-wrap">{aiInsight}</p>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <Button onClick={fetchAIInsight} disabled={loadingAI}>
-                {loadingAI ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Đang phân tích...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Lấy đánh giá AI
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-        </div>
       </main>
     </div>
   );

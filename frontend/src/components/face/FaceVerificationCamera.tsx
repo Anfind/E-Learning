@@ -1,12 +1,41 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { X, Camera, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { X, Camera, AlertCircle, Sparkles, Shield, CheckCircle, User, Activity, Eye, Zap } from "lucide-react"
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision"
+import * as faceapi from 'face-api.js'
 import { useAuth } from "@/contexts/AuthContext"
 import api from "@/lib/api"
+
+// Emotion mapping
+const EMOTION_MAP: Record<string, { label: string; emoji: string; color: string }> = {
+  neutral: { label: 'Bình thường', emoji: '😐', color: '#6b7280' },   // gray
+  happy: { label: 'Vui vẻ', emoji: '😊', color: '#22c55e' },         // green
+  sad: { label: 'Buồn', emoji: '😢', color: '#3b82f6' },             // blue
+  angry: { label: 'Tức giận', emoji: '😠', color: '#ef4444' },       // red
+  fearful: { label: 'Sợ hãi', emoji: '😨', color: '#a855f7' },       // purple
+  disgusted: { label: 'Ghê tởm', emoji: '🤢', color: '#ca8a04' },    // yellow
+  surprised: { label: 'Ngạc nhiên', emoji: '😲', color: '#f97316' }, // orange
+}
+
+// Smoothing constants
+const EMOTION_SMOOTHING_FACTOR = 0.3
+const EMOTION_HISTORY_SIZE = 8
+
+interface SmoothedExpressions {
+  neutral: number
+  happy: number
+  sad: number
+  angry: number
+  fearful: number
+  disgusted: number
+  surprised: number
+  [key: string]: number  // Add index signature for dynamic access
+}
 
 interface VerificationResult {
   success: boolean
@@ -52,6 +81,13 @@ export default function FaceVerificationCamera({
   const animationFrameRef = useRef<number | null>(null)
   const stableFramesRef = useRef<number>(0)
   const isCapturingRef = useRef<boolean>(false)
+  
+  // Emotion refs for smoothing
+  const smoothedExpressionsRef = useRef<SmoothedExpressions>({
+    neutral: 0, happy: 0, sad: 0, angry: 0, fearful: 0, disgusted: 0, surprised: 0
+  })
+  const expressionHistoryRef = useRef<SmoothedExpressions[]>([])
+  const lastEmotionDetectionRef = useRef<number>(0) // Throttle emotion detection
 
   // State
   const [isCameraActive, setIsCameraActive] = useState(false)
@@ -62,6 +98,9 @@ export default function FaceVerificationCamera({
   const [attemptCount, setAttemptCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [detectionStatus, setDetectionStatus] = useState("Chờ bật camera...")
+  const [expressionModelsLoaded, setExpressionModelsLoaded] = useState(false)
+  const [smoothedExpressions, setSmoothedExpressions] = useState<SmoothedExpressions | null>(null)
+  const [dominantEmotion, setDominantEmotion] = useState<{ emotion: string; confidence: number } | null>(null)
   const [frameMetrics, setFrameMetrics] = useState<FrameMetrics>({
     confidence: 0,
     brightness: 0,
@@ -84,6 +123,41 @@ export default function FaceVerificationCamera({
   const FACE_SIZE_OPTIMAL = { min: 0.25, max: 0.7 }
 
   const QUALITY_THRESHOLD = 55  // ✅ Increase from 50 to 55
+
+  // ============================================================
+  // EMOTION SMOOTHING FUNCTIONS
+  // ============================================================
+  const smoothExpressions = useCallback((raw: Record<string, number>): SmoothedExpressions => {
+    const emotions: (keyof SmoothedExpressions)[] = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised']
+    const prev = smoothedExpressionsRef.current
+    
+    const newSmoothed: SmoothedExpressions = {} as SmoothedExpressions
+    emotions.forEach(emotion => {
+      const rawValue = raw[emotion] || 0
+      newSmoothed[emotion] = prev[emotion] * (1 - EMOTION_SMOOTHING_FACTOR) + rawValue * EMOTION_SMOOTHING_FACTOR
+    })
+    
+    expressionHistoryRef.current.push(newSmoothed)
+    if (expressionHistoryRef.current.length > EMOTION_HISTORY_SIZE) {
+      expressionHistoryRef.current.shift()
+    }
+    
+    const avgSmoothed: SmoothedExpressions = {} as SmoothedExpressions
+    emotions.forEach(emotion => {
+      const sum = expressionHistoryRef.current.reduce((acc, exp) => acc + exp[emotion], 0)
+      avgSmoothed[emotion] = sum / expressionHistoryRef.current.length
+    })
+    
+    smoothedExpressionsRef.current = avgSmoothed
+    return avgSmoothed
+  }, [])
+
+  const getDominantEmotionFromSmoothed = useCallback((expressions: SmoothedExpressions): { emotion: string; confidence: number } => {
+    const entries = Object.entries(expressions) as [string, number][]
+    const sorted = entries.sort(([, a], [, b]) => b - a)
+    const [topEmotion, topConfidence] = sorted[0]
+    return { emotion: topEmotion, confidence: topConfidence }
+  }, [])
 
   // ✅ Auto-start camera on mount
   useEffect(() => {
@@ -145,6 +219,82 @@ export default function FaceVerificationCamera({
       }
     }
   }, [])
+
+  // ============================================================
+  // FACE-API EXPRESSION MODELS
+  // ============================================================
+  useEffect(() => {
+    const loadExpressionModels = async () => {
+      try {
+        console.log("[FACE-API] Loading expression models...")
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models')  // ✅ REQUIRED for expressions!
+        await faceapi.nets.faceExpressionNet.loadFromUri('/models')
+        setExpressionModelsLoaded(true)
+        console.log("[FACE-API] ✅ Expression models loaded!")
+      } catch (err) {
+        console.error("[FACE-API] Failed to load expression models:", err)
+      }
+    }
+    loadExpressionModels()
+  }, [])
+
+  // ============================================================
+  // EMOTION DETECTION - INDEPENDENT LOOP (không phụ thuộc MediaPipe)
+  // ============================================================
+  useEffect(() => {
+    let emotionIntervalId: NodeJS.Timeout | null = null
+
+    const runEmotionDetection = async () => {
+      if (!expressionModelsLoaded || !videoRef.current || !isCameraActive) {
+        return
+      }
+
+      const video = videoRef.current
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        return
+      }
+
+      try {
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({ 
+          inputSize: 416, 
+          scoreThreshold: 0.4 
+        })
+        
+        const detection = await faceapi
+          .detectSingleFace(video, detectorOptions)
+          .withFaceLandmarks()
+          .withFaceExpressions()
+
+        if (detection?.expressions) {
+          const expressionsObj = { ...detection.expressions } as Record<string, number>
+          const smoothed = smoothExpressions(expressionsObj)
+          setSmoothedExpressions(smoothed)
+          
+          const dominant = getDominantEmotionFromSmoothed(smoothed)
+          setDominantEmotion(dominant)
+          console.log("[EMOTION] ✅ Detected:", dominant.emotion, dominant.confidence.toFixed(2))
+        } else {
+          console.log("[EMOTION] No face detected")
+        }
+      } catch (err) {
+        console.error("[EMOTION] Detection error:", err)
+      }
+    }
+
+    // Chạy emotion detection mỗi 500ms khi camera active và models loaded
+    if (isCameraActive && expressionModelsLoaded) {
+      console.log("[EMOTION] Starting emotion detection loop...")
+      emotionIntervalId = setInterval(runEmotionDetection, 500)
+    }
+
+    return () => {
+      if (emotionIntervalId) {
+        clearInterval(emotionIntervalId)
+        console.log("[EMOTION] Stopped emotion detection loop")
+      }
+    }
+  }, [isCameraActive, expressionModelsLoaded, smoothExpressions, getDominantEmotionFromSmoothed])
 
   // ============================================================
   // CAMERA MANAGEMENT
@@ -467,6 +617,8 @@ export default function FaceVerificationCamera({
       const hasFace = results.faceLandmarks?.length === 1
       const hasMultipleFaces = (results.faceLandmarks?.length ?? 0) > 1
 
+      // NOTE: Emotion detection moved to separate useEffect (runs independently)
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const pixelData = imageData.data
 
@@ -662,22 +814,29 @@ export default function FaceVerificationCamera({
   // RENDER
   // ============================================================
   return (
-    <Card className="border-0 shadow-none w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <Camera className="w-6 h-6" />
-          Xác thực khuôn mặt - {verificationPhase === "before" ? "Trước bài học" : "Sau 2/3 bài học"}
+    <Card className="border-0 shadow-2xl w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-slate-200 dark:border-slate-700">
+        <CardTitle className="flex items-center gap-3 text-xl">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <span className="text-slate-800 dark:text-slate-100">Xác thực khuôn mặt</span>
+            <p className="text-xs text-muted-foreground font-normal mt-0.5">
+              {verificationPhase === "before" ? "📚 Trước khi bắt đầu bài học" : "⏳ Sau 2/3 bài học"}
+            </p>
+          </div>
         </CardTitle>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="w-6 h-6" />
+        <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-red-100 hover:text-red-600 transition-colors">
+          <X className="w-5 h-5" />
         </Button>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ===== VIDEO SECTION ===== */}
-          <div className="lg:col-span-2 space-y-2">
-            <div className="bg-black rounded-lg overflow-hidden relative aspect-video">
+          <div className="lg:col-span-2 space-y-3">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden relative aspect-video shadow-xl ring-1 ring-white/10">
               {!capturedImage ? (
                 <>
                   <video
@@ -690,22 +849,59 @@ export default function FaceVerificationCamera({
                   <canvas ref={canvasRef} className="hidden" />
                   <canvas ref={overlayCanvasRef} className="absolute inset-0 w-full h-full" />
 
-                  {/* Status */}
-                  <div className="absolute inset-0 flex flex-col justify-between p-4">
-                    <div className="flex justify-between">
-                      {qualityWarnings.length > 0 && (
-                        <div className="bg-red-500/80 text-white text-xs px-2 py-1 rounded">
-                          {qualityWarnings[0]}
-                        </div>
-                      )}
+                  {/* Top Overlay */}
+                  <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/60 to-transparent">
+                    <div className="flex justify-between items-start">
+                      {/* Live Badge */}
+                      <Badge variant="outline" className="bg-red-500/90 text-white border-0 text-xs px-2 py-1 animate-pulse">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full mr-1.5"></div>
+                        LIVE
+                      </Badge>
+
+                      {/* Quality Score */}
                       {frameMetrics.overallQuality > 0 && (
-                        <div className="ml-auto bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        <Badge 
+                          variant="outline" 
+                          className={`border-0 text-white text-xs px-2 py-1 ${
+                            frameMetrics.overallQuality >= 70 
+                              ? 'bg-green-500/90' 
+                              : frameMetrics.overallQuality >= 50 
+                                ? 'bg-yellow-500/90' 
+                                : 'bg-red-500/90'
+                          }`}
+                        >
+                          <Activity className="w-3 h-3 mr-1" />
                           {frameMetrics.overallQuality.toFixed(0)}%
-                        </div>
+                        </Badge>
                       )}
                     </div>
-                    <div className="text-center bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-medium w-fit mx-auto">
-                      {detectionStatus}
+                  </div>
+
+                  {/* Warning Badge */}
+                  {qualityWarnings.length > 0 && (
+                    <div className="absolute top-12 left-3 right-3">
+                      <Badge variant="outline" className="bg-orange-500/90 text-white border-0 text-xs w-full justify-center py-1">
+                        ⚠️ {qualityWarnings[0]}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Bottom Status */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+                    <div className="flex items-center justify-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className={`border-0 text-white text-sm px-4 py-2 ${
+                          detectionStatus.includes('✓') 
+                            ? 'bg-green-500/90' 
+                            : detectionStatus.includes('⚠️') 
+                              ? 'bg-yellow-500/90' 
+                              : 'bg-slate-700/90'
+                        }`}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        {detectionStatus}
+                      </Badge>
                     </div>
                   </div>
                 </>
@@ -714,89 +910,221 @@ export default function FaceVerificationCamera({
               )}
             </div>
 
-            <div className="flex gap-2">
+            {/* Action Buttons */}
+            <div className="flex gap-3">
               <Button
                 onClick={() => setIsCameraActive(!isCameraActive)}
                 variant={isCameraActive ? "destructive" : "default"}
-                className="flex-1 text-sm"
+                className="flex-1 text-sm h-10 font-medium shadow-md"
               >
-                {isCameraActive ? "Tắt camera" : "Bật camera"}
+                {isCameraActive ? (
+                  <>
+                    <X className="w-4 h-4 mr-2" />
+                    Tắt camera
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Bật camera
+                  </>
+                )}
               </Button>
               {capturedImage && (
-                <Button onClick={handleRetake} variant="outline" className="flex-1 text-sm">
-                  Chụp lại
+                <Button onClick={handleRetake} variant="outline" className="flex-1 text-sm h-10 font-medium">
+                  🔄 Chụp lại
                 </Button>
               )}
             </div>
 
-            {attemptCount > 0 && <p className="text-xs text-muted-foreground text-center">Lần thử: {attemptCount}</p>}
+            {attemptCount > 0 && (
+              <p className="text-xs text-muted-foreground text-center bg-slate-100 dark:bg-slate-800 rounded-lg py-1.5">
+                Lần thử: <span className="font-semibold">{attemptCount}</span>
+              </p>
+            )}
           </div>
 
-          {/* ===== RESULT SECTION ===== */}
-          <div className="space-y-2">
-            {/* Success */}
+          {/* ===== SIDE PANEL ===== */}
+          <div className="space-y-3">
+            {/* Success Card */}
             {isSuccess && verificationResult && (
-              <div className="p-3 bg-green-50 border border-green-300 rounded-lg space-y-2">
-                <div className="flex items-start gap-2">
-                  <div className="text-2xl">✅</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-green-900 truncate">Xác thực thành công</p>
-                    <p className="text-xs text-green-700">{user?.name || user?.email}</p>
+              <Card className="border-0 bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-full">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-lg">Thành công!</p>
+                      <p className="text-xs text-green-100 truncate">{user?.name || user?.email}</p>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Error */}
+            {/* Error Card */}
             {error && (
-              <div className="p-3 bg-red-50 border border-red-300 rounded-lg flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700">{error}</p>
-              </div>
+              <Card className="border-0 bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm">{error}</p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Loading */}
+            {/* Loading Card */}
             {loading && (
-              <div className="p-3 bg-blue-50 border border-blue-300 rounded-lg">
-                <p className="text-xs text-blue-700">⏳ Đang xử lý...</p>
-              </div>
+              <Card className="border-0 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+                    <p className="text-sm font-medium">Đang xác thực...</p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Metrics */}
+            {/* DEBUG: Expression Status Card */}
+            {isCameraActive && (
+              <Card className="border-0 bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg">
+                <CardContent className="p-3">
+                  <p className="text-xs font-bold mb-2">🐛 DEBUG INFO</p>
+                  <div className="text-xs space-y-1">
+                    <p>Models: {expressionModelsLoaded ? '✅ Loaded' : '❌ Not loaded'}</p>
+                    <p>Smoothed: {smoothedExpressions ? '✅ Yes' : '❌ No'}</p>
+                    <p>Dominant: {dominantEmotion ? `✅ ${dominantEmotion.emotion}` : '❌ No'}</p>
+                    <p>Camera: {isCameraActive ? '✅ Active' : '❌ Inactive'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Dominant Emotion Card - ALWAYS SHOW when camera active and models loaded */}
+            {isCameraActive && expressionModelsLoaded && (
+              <Card 
+                className="border-0 shadow-lg overflow-hidden transition-all duration-300"
+                style={{ 
+                  background: dominantEmotion 
+                    ? `linear-gradient(135deg, ${EMOTION_MAP[dominantEmotion.emotion]?.color || '#64748b'}dd, ${EMOTION_MAP[dominantEmotion.emotion]?.color || '#64748b'}99)`
+                    : 'linear-gradient(135deg, #64748bdd, #64748b99)'
+                }}
+              >
+                <CardContent className="p-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl">
+                      {dominantEmotion ? (EMOTION_MAP[dominantEmotion.emotion]?.emoji || '😐') : '⏳'}
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/80 uppercase tracking-wider font-medium">Cảm xúc</p>
+                      <p className="text-lg font-bold">
+                        {dominantEmotion ? (EMOTION_MAP[dominantEmotion.emotion]?.label || dominantEmotion.emotion) : 'Đang phát hiện...'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Emotion Bars - ALWAYS SHOW when camera active and models loaded */}
+            {isCameraActive && expressionModelsLoaded && (
+              <Card className="border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-lg">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                    Phân tích cảm xúc
+                    {!smoothedExpressions && <span className="text-xs font-normal text-muted-foreground">(Đang tải...)</span>}
+                  </div>
+                  <div className="space-y-2">
+                    {Object.entries(EMOTION_MAP).map(([key, { label, emoji, color }]) => {
+                      const value = smoothedExpressions ? ((smoothedExpressions as Record<string, number>)[key] || 0) : 0
+                      return (
+                        <div key={key} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                              <span>{emoji}</span>
+                              <span>{label}</span>
+                            </span>
+                            <span className="font-mono font-medium" style={{ color }}>
+                              {(value * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={value * 100} 
+                            className="h-1.5 bg-slate-200 dark:bg-slate-700"
+                            indicatorColor={color}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quality Metrics Card */}
             {isCameraActive && frameMetrics.confidence > 0 && (
-              <div className="p-3 bg-blue-50 border border-blue-300 rounded-lg space-y-1.5">
-                <p className="text-xs font-semibold text-blue-900">📊 Thông số</p>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span>Độ sáng:</span>
-                    <span className="font-medium">{frameMetrics.brightness}</span>
+              <Card className="border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur shadow-lg">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    <Activity className="w-4 h-4 text-blue-500" />
+                    Chất lượng hình ảnh
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tương phản:</span>
-                    <span className="font-medium">{frameMetrics.contrast.toFixed(1)}</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-2 text-center">
+                      <p className="text-muted-foreground">Độ sáng</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{frameMetrics.brightness}</p>
+                    </div>
+                    <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-2 text-center">
+                      <p className="text-muted-foreground">Tương phản</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{frameMetrics.contrast.toFixed(1)}</p>
+                    </div>
+                    <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-2 text-center">
+                      <p className="text-muted-foreground">Sắc nét</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{(frameMetrics.sharpness * 100).toFixed(0)}%</p>
+                    </div>
+                    <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-2 text-center">
+                      <p className="text-muted-foreground">Kích thước</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{frameMetrics.faceSize.toFixed(1)}%</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Sắc nét:</span>
-                    <span className="font-medium">{(frameMetrics.sharpness * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Kích thước:</span>
-                    <span className="font-medium">{frameMetrics.faceSize.toFixed(1)}%</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Tips */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs font-semibold text-blue-900 mb-2">💡 Mẹo</p>
-              <ul className="text-xs space-y-0.5 text-blue-700">
-                <li>✓ Mặt thẳng vào camera</li>
-                <li>✓ Ánh sáng tự nhiên</li>
-                <li>✓ Cách 30-50cm</li>
-                <li>✓ Chất lượng ≥ 50%</li>
-              </ul>
-            </div>
+            {/* Tips Card */}
+            <Card className="border-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">
+                  <Zap className="w-4 h-4" />
+                  Mẹo xác thực
+                </div>
+                <ul className="text-xs space-y-1 text-amber-600 dark:text-amber-400">
+                  <li>✓ Nhìn thẳng vào camera</li>
+                  <li>✓ Ánh sáng đều, tự nhiên</li>
+                  <li>✓ Khoảng cách 30-50cm</li>
+                  <li>✓ Chất lượng ≥ 50%</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* User Info */}
+            {user && (
+              <Card className="border-0 bg-white/60 dark:bg-slate-800/60 backdrop-blur shadow">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-slate-200 dark:bg-slate-700 rounded-full">
+                      <User className="w-3 h-3 text-slate-600 dark:text-slate-300" />
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-medium text-slate-700 dark:text-slate-200 truncate">{user.name}</p>
+                      <p className="text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </CardContent>
