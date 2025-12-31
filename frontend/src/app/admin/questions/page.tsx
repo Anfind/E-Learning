@@ -89,7 +89,7 @@ interface Subject {
 }
 
 export default function AdminQuestionsPage() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, isTeacher } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -106,13 +106,13 @@ export default function AdminQuestionsPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
-    } else if (!authLoading && user && !isAdmin) {
+    } else if (!authLoading && user && !isAdmin && !isTeacher) {
       router.push('/dashboard');
-    } else if (user && isAdmin) {
+    } else if (user && (isAdmin || isTeacher)) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isAdmin]);
+  }, [user, authLoading, isAdmin, isTeacher]);
 
   const loadData = async () => {
     try {

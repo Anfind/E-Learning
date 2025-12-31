@@ -1,0 +1,11 @@
+1- Fix bugs FaceNet.
+
+2- Hoàn thiện: Phân tích kết quả học tập, tiến trình học tập của từng cá nhân. Từ đó chỉ ra điều cần cải thiện để tiến bộ.
+
+    + Báo cáo cá nhân: Phân tích theo từng tháng.
+
+    + Báo cáo theo bài thi: Số lượng câu đúng, tỉ lệ => phân loại câu.
+
+    + Báo cáo theo môn học: Các bài hoàn thiện... => Detect thường xuyên (5 phút/lần) phân tích cảm xúc.
+
+3- Hoàn thiện database 3NF (Chuẩn hóa cơ sở dữ liệu dạng 3).

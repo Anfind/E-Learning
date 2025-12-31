@@ -151,7 +151,7 @@ export default function AdminMajorsPage() {
       data.append('order', formData.order.toString());
       data.append('isActive', formData.isActive.toString());
       if (imageFile) {
-        data.append('image', imageFile);
+        data.append('courseImage', imageFile);
       }
 
       if (editingMajor) {

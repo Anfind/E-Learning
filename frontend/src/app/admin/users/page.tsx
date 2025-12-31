@@ -298,6 +298,16 @@ function AdminUsersContent() {
                                 Khóa
                               </Button>
                             )}
+                            {(u.status === 'DEACTIVE' || u.status === 'APPROVED') && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleUpdateStatus(u.id, 'ACTIVE')}
+                              >
+                                <UserCheck className="mr-1 h-4 w-4" />
+                                Mở khóa
+                              </Button>
+                            )}
                             {u.status === 'DEACTIVE' && (
                               <Button
                                 size="sm"

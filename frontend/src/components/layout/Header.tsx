@@ -11,18 +11,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { GraduationCap, User, LogOut, LayoutDashboard, Settings, Shield, MessageCircle } from 'lucide-react';
+import { GraduationCap, User, LogOut, LayoutDashboard, Settings, Shield, MessageCircle, BookOpen, FileText, Award, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { getUploadUrl } from '@/lib/api';
 
 export default function Header() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isTeacher } = useAuth();
+
+  // Determine home link based on role
+  const getHomeLink = () => {
+    if (!user) return '/';
+    if (isAdmin) return '/admin/dashboard';
+    if (isTeacher) return '/teacher/dashboard';
+    return '/dashboard';
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60 shadow-sm">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href={user ? (isAdmin ? '/admin/dashboard' : '/dashboard') : '/'} className="flex items-center space-x-2 group hover:opacity-90 transition-all">
+        <Link href={getHomeLink()} className="flex items-center space-x-2 group hover:opacity-90 transition-all">
           <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-md group-hover:shadow-lg transition-shadow">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
@@ -33,11 +41,41 @@ export default function Header() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {user && !isAdmin && (
+          {/* Teacher Navigation */}
+          {user && isTeacher && (
+            <>
+              <Link href="/teacher/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors relative group">
+                Dashboard
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+              <Link href="/dashboard/analytics" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors relative group">
+                Phân tích
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-600 to-blue-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+              <Link href="/teacher/subjects" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors relative group">
+                Môn học
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-600 to-emerald-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+              <Link href="/teacher/lessons" className="text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors relative group">
+                Bài học
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+              <Link href="/teacher/exams" className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors relative group">
+                Bài thi
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-600 to-amber-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+            </>
+          )}
+          {/* User Navigation */}
+          {user && !isAdmin && !isTeacher && (
             <>
               <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors relative group">
                 Dashboard
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
+              </Link>
+              <Link href="/dashboard/analytics" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors relative group">
+                Phân tích
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-600 to-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
               <Link href="/majors" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors relative group">
                 Ngành học
@@ -106,12 +144,57 @@ export default function Header() {
                       </Link>
                     </DropdownMenuItem>
                   </>
+                ) : isTeacher ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/teacher/dashboard" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/analytics" className="cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Phân tích học tập
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/teacher/subjects" className="cursor-pointer">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Môn học của tôi
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/teacher/lessons" className="cursor-pointer">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Quản lý bài học
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/teacher/exams" className="cursor-pointer">
+                        <Award className="mr-2 h-4 w-4" />
+                        Quản lý bài thi
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Hồ sơ
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   <>
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard" className="cursor-pointer">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
                         Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/analytics" className="cursor-pointer">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Phân tích học tập
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

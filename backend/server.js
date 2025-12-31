@@ -74,6 +74,8 @@ const questionRoutes = require('./routes/questions');
 const adminRoutes = require('./routes/admin');
 const chatRoutes = require('./routes/chat');
 const faceRoutes = require('./routes/face');
+const teacherRoutes = require('./routes/teacher');
+const analyticsRoutes = require('./routes/analytics');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -89,6 +91,8 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/face', faceRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use((req, res) => {

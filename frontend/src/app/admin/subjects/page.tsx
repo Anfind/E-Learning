@@ -173,7 +173,7 @@ export default function AdminSubjectsPage() {
       data.append('order', formData.order.toString());
       data.append('isActive', formData.isActive.toString());
       if (imageFile) {
-        data.append('image', imageFile);
+        data.append('courseImage', imageFile);
       }
 
       if (editingSubject) {
@@ -450,6 +450,7 @@ export default function AdminSubjectsPage() {
                 Ngành học <span className="text-destructive">*</span>
               </Label>
               <Select
+                key={`major-${editingSubject?.id || 'new'}-${formData.majorId}`}
                 value={formData.majorId}
                 onValueChange={(value) => setFormData({ ...formData, majorId: value, prerequisiteId: '' })}
               >
@@ -470,6 +471,7 @@ export default function AdminSubjectsPage() {
             <div className="space-y-2">
               <Label htmlFor="prerequisiteId">Môn tiên quyết</Label>
               <Select
+                key={`prereq-${editingSubject?.id || 'new'}-${formData.prerequisiteId}`}
                 value={formData.prerequisiteId || 'none'}
                 onValueChange={(value) => setFormData({ ...formData, prerequisiteId: value === 'none' ? '' : value })}
                 disabled={!formData.majorId}

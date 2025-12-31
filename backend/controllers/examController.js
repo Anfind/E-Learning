@@ -87,6 +87,10 @@ exports.getExamDetail = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
+    const userRole = req.user?.role;
+    
+    // Teacher/Admin can see correctAnswer, students cannot
+    const isTeacherOrAdmin = userRole === 'TEACHER' || userRole === 'ADMIN';
     
     const exam = await prisma.exam.findUnique({
       where: { id },
@@ -99,7 +103,10 @@ exports.getExamDetail = async (req, res) => {
             type: true,
             options: true,
             points: true,
-            order: true
+            order: true,
+            createdAt: true,
+            // Only include correctAnswer for teachers/admins
+            ...(isTeacherOrAdmin && { correctAnswer: true })
           },
           orderBy: { order: 'asc' }
         },

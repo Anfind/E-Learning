@@ -3,10 +3,28 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// Helper function to generate random Vietnamese names
+function generateVietnameseName() {
+  const ho = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
+  const dem = ['Văn', 'Thị', 'Minh', 'Hoàng', 'Hữu', 'Đức', 'Thanh', 'Quốc', 'Anh', 'Thùy', 'Ngọc', 'Phương', 'Hải', 'Xuân', 'Thu', 'Tấn'];
+  const ten = ['An', 'Bình', 'Chi', 'Dũng', 'Em', 'Phúc', 'Giang', 'Hà', 'Khang', 'Linh', 'Mai', 'Nam', 'Oanh', 'Phong', 'Quang', 'Sơn', 'Tâm', 'Uyên', 'Việt', 'Yến', 'Thảo', 'Hùng', 'Trang', 'Tuấn', 'Hương', 'Đạt', 'Kiên', 'Long', 'Nhung', 'Trung'];
+  
+  return `${ho[Math.floor(Math.random() * ho.length)]} ${dem[Math.floor(Math.random() * dem.length)]} ${ten[Math.floor(Math.random() * ten.length)]}`;
+}
+
+// Helper to generate phone number
+function generatePhone(index) {
+  const prefixes = ['090', '091', '093', '094', '096', '097', '098', '099', '086', '088', '089'];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  return `${prefix}${String(index).padStart(7, '0')}`;
+}
+
 async function main() {
   console.log('🌱 Starting database seeding...\n');
 
+  // ============================================
   // 1. Create Admin user
+  // ============================================
   console.log('👤 Creating admin user...');
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
@@ -22,2426 +40,1539 @@ async function main() {
   });
   console.log('✓ Admin created:', admin.email);
 
-  // 2. Create demo users
-  console.log('\n👥 Creating demo users...');
-  const demoPassword = await bcrypt.hash('123456', 10);
-  
-  const user1 = await prisma.user.upsert({
-    where: { email: 'student@example.com' },
-    update: {},
-    create: {
-      email: 'student@example.com',
-      password: demoPassword,
-      name: 'Nguyễn Văn A',
-      phone: '0901234567',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user2 = await prisma.user.upsert({
-    where: { email: 'student2@example.com' },
-    update: {},
-    create: {
-      email: 'student2@example.com',
-      password: demoPassword,
-      name: 'Trần Thị B',
-      phone: '0907654321',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user3 = await prisma.user.upsert({
-    where: { email: 'pending@example.com' },
-    update: {},
-    create: {
-      email: 'pending@example.com',
-      password: demoPassword,
-      name: 'Lê Văn C',
-      phone: '0909876543',
-      role: 'USER',
-      status: 'PENDING'
-    }
-  });
-
-  // More users for chat testing
-  const user4 = await prisma.user.upsert({
-    where: { email: 'user4@example.com' },
-    update: {},
-    create: {
-      email: 'user4@example.com',
-      password: demoPassword,
-      name: 'Phạm Minh D',
-      phone: '0901111111',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user5 = await prisma.user.upsert({
-    where: { email: 'user5@example.com' },
-    update: {},
-    create: {
-      email: 'user5@example.com',
-      password: demoPassword,
-      name: 'Hoàng Thu E',
-      phone: '0902222222',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user6 = await prisma.user.upsert({
-    where: { email: 'user6@example.com' },
-    update: {},
-    create: {
-      email: 'user6@example.com',
-      password: demoPassword,
-      name: 'Vũ Hải F',
-      phone: '0903333333',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user7 = await prisma.user.upsert({
-    where: { email: 'user7@example.com' },
-    update: {},
-    create: {
-      email: 'user7@example.com',
-      password: demoPassword,
-      name: 'Đỗ Lan G',
-      phone: '0904444444',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const user8 = await prisma.user.upsert({
-    where: { email: 'user8@example.com' },
-    update: {},
-    create: {
-      email: 'user8@example.com',
-      password: demoPassword,
-      name: 'Bùi Quang H',
-      phone: '0905555555',
-      role: 'USER',
-      status: 'ACTIVE'
-    }
-  });
-
-  console.log('✓ Created 8 demo users with password: 123456');
-
-  // 2.5. Create Teacher users
-  console.log('\n👨‍🏫 Creating teacher users...');
+  // ============================================
+  // 2. Create 5 Teachers
+  // ============================================
+  console.log('\n👨‍🏫 Creating 5 teachers...');
   const teacherPassword = await bcrypt.hash('teacher123', 10);
   
-  const teacher1 = await prisma.user.upsert({
-    where: { email: 'teacher1@example.com' },
-    update: {},
-    create: {
-      email: 'teacher1@example.com',
-      password: teacherPassword,
-      name: 'Nguyễn Văn Thầy',
-      phone: '0911111111',
-      role: 'TEACHER',
-      status: 'ACTIVE'
+  const teachersData = [
+    { email: 'teacher1@example.com', name: 'PGS.TS Nguyễn Văn Hùng', phone: '0911111111' },
+    { email: 'teacher2@example.com', name: 'TS. Trần Thị Lan', phone: '0922222222' },
+    { email: 'teacher3@example.com', name: 'ThS. Lê Minh Đức', phone: '0933333333' },
+    { email: 'teacher4@example.com', name: 'TS. Phạm Hoàng Nam', phone: '0944444444' },
+    { email: 'teacher5@example.com', name: 'ThS. Hoàng Thu Hương', phone: '0955555555' },
+  ];
+
+  const teachers = [];
+  for (const t of teachersData) {
+    const teacher = await prisma.user.upsert({
+      where: { email: t.email },
+      update: {},
+      create: {
+        email: t.email,
+        password: teacherPassword,
+        name: t.name,
+        phone: t.phone,
+        role: 'TEACHER',
+        status: 'ACTIVE'
+      }
+    });
+    teachers.push(teacher);
+    console.log(`  ✓ ${teacher.name}`);
+  }
+  console.log('✓ Created 5 teachers with password: teacher123');
+
+  // ============================================
+  // 3. Create 40 Students
+  // ============================================
+  console.log('\n👥 Creating 40 students...');
+  const studentPassword = await bcrypt.hash('123456', 10);
+  
+  const students = [];
+  
+  // Create 40 students with various statuses
+  for (let i = 1; i <= 40; i++) {
+    const name = generateVietnameseName();
+    const email = `student${i}@example.com`;
+    const phone = generatePhone(1000000 + i);
+    
+    // Most students are ACTIVE, some PENDING
+    let status = 'ACTIVE';
+    if (i >= 38) status = 'PENDING'; // Last 3 are pending
+    
+    const student = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: {
+        email,
+        password: studentPassword,
+        name,
+        phone,
+        role: 'USER',
+        status
+      }
+    });
+    students.push(student);
+    
+    if (i % 10 === 0) {
+      console.log(`  ✓ Created ${i} students...`);
     }
-  });
+  }
+  console.log('✓ Created 40 students with password: 123456');
 
-  const teacher2 = await prisma.user.upsert({
-    where: { email: 'teacher2@example.com' },
-    update: {},
-    create: {
-      email: 'teacher2@example.com',
-      password: teacherPassword,
-      name: 'Trần Thị Cô',
-      phone: '0922222222',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher3 = await prisma.user.upsert({
-    where: { email: 'teacher3@example.com' },
-    update: {},
-    create: {
-      email: 'teacher3@example.com',
-      password: teacherPassword,
-      name: 'Lê Văn Giảng',
-      phone: '0933333333',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher4 = await prisma.user.upsert({
-    where: { email: 'teacher4@example.com' },
-    update: {},
-    create: {
-      email: 'teacher4@example.com',
-      password: teacherPassword,
-      name: 'Phạm Thị Dạy',
-      phone: '0944444444',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher5 = await prisma.user.upsert({
-    where: { email: 'teacher5@example.com' },
-    update: {},
-    create: {
-      email: 'teacher5@example.com',
-      password: teacherPassword,
-      name: 'Hoàng Minh Tuấn',
-      phone: '0955555555',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher6 = await prisma.user.upsert({
-    where: { email: 'teacher6@example.com' },
-    update: {},
-    create: {
-      email: 'teacher6@example.com',
-      password: teacherPassword,
-      name: 'Ngô Thị Hương',
-      phone: '0966666666',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher7 = await prisma.user.upsert({
-    where: { email: 'teacher7@example.com' },
-    update: {},
-    create: {
-      email: 'teacher7@example.com',
-      password: teacherPassword,
-      name: 'Đặng Văn Khoa',
-      phone: '0977777777',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  const teacher8 = await prisma.user.upsert({
-    where: { email: 'teacher8@example.com' },
-    update: {},
-    create: {
-      email: 'teacher8@example.com',
-      password: teacherPassword,
-      name: 'Vũ Thị Mai',
-      phone: '0988888888',
-      role: 'TEACHER',
-      status: 'ACTIVE'
-    }
-  });
-
-  console.log('✓ Created 8 teachers with password: teacher123');
-
-  // 3. Create Majors
+  // ============================================
+  // 4. Create Majors (6 majors)
+  // ============================================
   console.log('\n🎓 Creating majors...');
-  const major1 = await prisma.major.create({
+  
+  const majorsData = [
+    { name: 'Công nghệ thông tin', description: 'Ngành đào tạo về lập trình, phát triển phần mềm và hệ thống thông tin. Sinh viên được trang bị kiến thức từ cơ bản đến nâng cao về các ngôn ngữ lập trình, database, web development và mobile development.', order: 1 },
+    { name: 'Kỹ thuật phần mềm', description: 'Ngành đào tạo về quy trình phát triển phần mềm chuyên nghiệp, bao gồm Agile/Scrum, testing, DevOps và CI/CD. Tập trung vào kỹ năng làm việc nhóm và quản lý dự án.', order: 2 },
+    { name: 'Khoa học dữ liệu', description: 'Ngành đào tạo về phân tích dữ liệu, machine learning và AI. Học viên sẽ thành thạo Python, R, SQL và các công cụ visualization như Tableau, Power BI.', order: 3 },
+    { name: 'An ninh mạng', description: 'Ngành đào tạo về bảo mật hệ thống, ethical hacking, mã hóa và phòng chống tấn công mạng. Phù hợp với những ai đam mê lĩnh vực cybersecurity.', order: 4 },
+    { name: 'Thiết kế đồ họa & UI/UX', description: 'Ngành đào tạo về thiết kế giao diện, trải nghiệm người dùng, đồ họa sáng tạo. Sử dụng Figma, Adobe XD, Photoshop, Illustrator.', order: 5 },
+    { name: 'Marketing số', description: 'Ngành đào tạo về Digital Marketing, SEO/SEM, Social Media Marketing, Content Marketing và Analytics. Phù hợp với xu hướng kinh doanh online.', order: 6 },
+  ];
+
+  const majors = [];
+  for (const m of majorsData) {
+    const major = await prisma.major.create({ data: m });
+    majors.push(major);
+    console.log(`  ✓ ${major.name}`);
+  }
+  console.log('✓ Created 6 majors');
+
+  // ============================================
+  // 5. Create Subjects (nhiều môn, tập trung vào teacher 1 và 2)
+  // ============================================
+  console.log('\n📚 Creating subjects...');
+
+  // === CÔNG NGHỆ THÔNG TIN (major 0) - Teacher 1 & 2 phụ trách chính ===
+  const subject_cntt_1 = await prisma.subject.create({
     data: {
-      name: 'Công nghệ thông tin',
-      description: 'Ngành đào tạo về lập trình, phát triển phần mềm và hệ thống thông tin',
+      majorId: majors[0].id,
+      teacherId: teachers[0].id, // Teacher 1
+      name: 'Nhập môn lập trình',
+      description: 'Học các khái niệm cơ bản về lập trình: biến, kiểu dữ liệu, câu lệnh điều kiện, vòng lặp. Sử dụng ngôn ngữ Python.',
       order: 1
     }
   });
 
-  const major2 = await prisma.major.create({
+  const subject_cntt_2 = await prisma.subject.create({
     data: {
-      name: 'Toán học',
-      description: 'Ngành đào tạo về toán học thuần túy và toán ứng dụng',
+      majorId: majors[0].id,
+      teacherId: teachers[0].id, // Teacher 1
+      name: 'Cấu trúc dữ liệu và giải thuật',
+      description: 'Mảng, linked list, stack, queue, tree, graph. Các thuật toán sắp xếp, tìm kiếm và quy hoạch động.',
+      prerequisiteId: subject_cntt_1.id,
       order: 2
     }
   });
 
-  const major3 = await prisma.major.create({
+  const subject_cntt_3 = await prisma.subject.create({
     data: {
-      name: 'Khoa học dữ liệu',
-      description: 'Ngành đào tạo về phân tích dữ liệu, machine learning và AI',
+      majorId: majors[0].id,
+      teacherId: teachers[0].id, // Teacher 1
+      name: 'Lập trình hướng đối tượng (OOP)',
+      description: 'Class, Object, Encapsulation, Inheritance, Polymorphism, Abstraction. Áp dụng với Java và Python.',
+      prerequisiteId: subject_cntt_1.id,
       order: 3
     }
   });
 
-  const major4 = await prisma.major.create({
+  const subject_cntt_4 = await prisma.subject.create({
     data: {
-      name: 'Thiết kế đồ họa',
-      description: 'Ngành đào tạo về thiết kế UI/UX, đồ họa và sáng tạo nội dung',
+      majorId: majors[0].id,
+      teacherId: teachers[1].id, // Teacher 2
+      name: 'Cơ sở dữ liệu',
+      description: 'SQL, MySQL, PostgreSQL. Thiết kế database, ERD, normalization, indexing và query optimization.',
+      prerequisiteId: subject_cntt_1.id,
       order: 4
     }
   });
 
-  const major5 = await prisma.major.create({
+  const subject_cntt_5 = await prisma.subject.create({
     data: {
-      name: 'Quản trị kinh doanh',
-      description: 'Ngành đào tạo về quản lý, marketing, và chiến lược kinh doanh',
+      majorId: majors[0].id,
+      teacherId: teachers[1].id, // Teacher 2
+      name: 'Lập trình Web Frontend',
+      description: 'HTML5, CSS3, JavaScript ES6+, React.js. Responsive design và modern web development.',
+      prerequisiteId: subject_cntt_3.id,
       order: 5
     }
   });
 
-  const major6 = await prisma.major.create({
+  const subject_cntt_6 = await prisma.subject.create({
     data: {
-      name: 'Kỹ thuật phần mềm',
-      description: 'Ngành đào tạo về quy trình phát triển phần mềm, testing, và DevOps',
+      majorId: majors[0].id,
+      teacherId: teachers[1].id, // Teacher 2
+      name: 'Lập trình Web Backend',
+      description: 'Node.js, Express.js, RESTful API, Authentication, Authorization. Kết nối database và deployment.',
+      prerequisiteId: subject_cntt_4.id,
       order: 6
     }
   });
 
-  const major7 = await prisma.major.create({
+  const subject_cntt_7 = await prisma.subject.create({
     data: {
-      name: 'An ninh mạng',
-      description: 'Ngành đào tạo về bảo mật hệ thống, mã hóa và phòng chống tấn công mạng',
+      majorId: majors[0].id,
+      teacherId: teachers[0].id, // Teacher 1
+      name: 'Lập trình Mobile với React Native',
+      description: 'Xây dựng ứng dụng mobile cross-platform với React Native. UI components, navigation, và native modules.',
+      prerequisiteId: subject_cntt_5.id,
       order: 7
     }
   });
 
-  const major8 = await prisma.major.create({
+  // === KỸ THUẬT PHẦN MỀM (major 1) - Teacher 1 & 2 ===
+  const subject_ktpm_1 = await prisma.subject.create({
     data: {
-      name: 'Trí tuệ nhân tạo',
-      description: 'Ngành đào tạo chuyên sâu về AI, Deep Learning và Computer Vision',
-      order: 8
-    }
-  });
-
-  const major9 = await prisma.major.create({
-    data: {
-      name: 'Kinh tế số',
-      description: 'Ngành đào tạo về kinh tế trong thời đại số, thương mại điện tử',
-      order: 9
-    }
-  });
-
-  const major10 = await prisma.major.create({
-    data: {
-      name: 'Ngôn ngữ Anh',
-      description: 'Ngành đào tạo về tiếng Anh chuyên ngành, biên phiên dịch',
-      order: 10
-    }
-  });
-
-  const major11 = await prisma.major.create({
-    data: {
-      name: 'Marketing số',
-      description: 'Ngành đào tạo về Digital Marketing, SEO, Social Media Marketing',
-      order: 11
-    }
-  });
-
-  const major12 = await prisma.major.create({
-    data: {
-      name: 'Kế toán - Tài chính',
-      description: 'Ngành đào tạo về kế toán doanh nghiệp, tài chính và đầu tư',
-      order: 12
-    }
-  });
-
-  console.log('✓ Created 12 majors');
-
-  // 4. Create Subjects
-  console.log('\n📚 Creating subjects...');
-  
-  // IT subjects
-  const subject1 = await prisma.subject.create({
-    data: {
-      majorId: major1.id,
-      teacherId: teacher1.id,
-      name: 'Lập trình cơ bản',
-      description: 'Học các khái niệm cơ bản về lập trình, biến, hàm, vòng lặp',
-      order: 1
-    }
-  });
-
-  const subject2 = await prisma.subject.create({
-    data: {
-      majorId: major1.id,
-      teacherId: teacher1.id,
-      name: 'Cấu trúc dữ liệu và giải thuật',
-      description: 'Học về mảng, linked list, stack, queue, tree và các thuật toán tìm kiếm, sắp xếp',
-      prerequisiteId: subject1.id,
-      order: 2
-    }
-  });
-
-  const subject3 = await prisma.subject.create({
-    data: {
-      majorId: major1.id,
-      teacherId: teacher2.id,
-      name: 'Lập trình hướng đối tượng',
-      description: 'Tìm hiểu về OOP: class, object, inheritance, polymorphism',
-      prerequisiteId: subject1.id,
-      order: 3
-    }
-  });
-
-  const subject4 = await prisma.subject.create({
-    data: {
-      majorId: major1.id,
-      teacherId: teacher2.id,
-      name: 'Phát triển Web',
-      description: 'HTML, CSS, JavaScript và các framework hiện đại',
-      prerequisiteId: subject1.id,
-      order: 4
-    }
-  });
-
-  // Math subjects
-  const subject5 = await prisma.subject.create({
-    data: {
-      majorId: major2.id,
-      teacherId: teacher3.id,
-      name: 'Giải tích 1',
-      description: 'Học về đạo hàm, tích phân, chuỗi số',
-      order: 1
-    }
-  });
-
-  const subject6 = await prisma.subject.create({
-    data: {
-      majorId: major2.id,
-      teacherId: teacher3.id,
-      name: 'Đại số tuyến tính',
-      description: 'Ma trận, định thức, không gian vector',
-      order: 2
-    }
-  });
-
-  // Data Science subjects
-  const subject7 = await prisma.subject.create({
-    data: {
-      majorId: major3.id,
-      teacherId: teacher4.id,
-      name: 'Python cho Data Science',
-      description: 'Học Python, NumPy, Pandas để phân tích dữ liệu',
-      order: 1
-    }
-  });
-
-  const subject8 = await prisma.subject.create({
-    data: {
-      majorId: major3.id,
-      teacherId: teacher4.id,
-      name: 'Machine Learning cơ bản',
-      description: 'Các thuật toán ML: Linear Regression, Decision Tree, Neural Network',
-      prerequisiteId: subject7.id,
-      order: 2
-    }
-  });
-
-  // Design subjects
-  const subject9 = await prisma.subject.create({
-    data: {
-      majorId: major4.id,
-      teacherId: teacher5.id,
-      name: 'Nguyên lý thiết kế',
-      description: 'Color theory, typography, layout và composition',
-      order: 1
-    }
-  });
-
-  const subject10 = await prisma.subject.create({
-    data: {
-      majorId: major4.id,
-      teacherId: teacher5.id,
-      name: 'UI/UX Design',
-      description: 'Thiết kế giao diện người dùng và trải nghiệm người dùng',
-      prerequisiteId: subject9.id,
-      order: 2
-    }
-  });
-
-  // Quản trị kinh doanh subjects (major5)
-  const subject11 = await prisma.subject.create({
-    data: {
-      majorId: major5.id,
-      teacherId: teacher6.id,
-      name: 'Quản trị học',
-      description: 'Các nguyên tắc cơ bản về quản trị và tổ chức doanh nghiệp',
-      order: 1
-    }
-  });
-
-  const subject12 = await prisma.subject.create({
-    data: {
-      majorId: major5.id,
-      teacherId: teacher6.id,
-      name: 'Marketing căn bản',
-      description: 'Các khái niệm cơ bản về marketing, nghiên cứu thị trường',
-      order: 2
-    }
-  });
-
-  const subject13 = await prisma.subject.create({
-    data: {
-      majorId: major5.id,
-      teacherId: teacher6.id,
-      name: 'Quản trị nhân sự',
-      description: 'Quản lý nguồn nhân lực, tuyển dụng, đào tạo và phát triển',
-      prerequisiteId: subject11.id,
-      order: 3
-    }
-  });
-
-  // Kỹ thuật phần mềm subjects (major6)
-  const subject14 = await prisma.subject.create({
-    data: {
-      majorId: major6.id,
-      teacherId: teacher1.id,
+      majorId: majors[1].id,
+      teacherId: teachers[0].id, // Teacher 1
       name: 'Quy trình phát triển phần mềm',
-      description: 'Agile, Scrum, Waterfall và các phương pháp quản lý dự án',
+      description: 'Waterfall, Agile, Scrum, Kanban. Quản lý dự án với Jira, Trello. Sprint planning và retrospective.',
       order: 1
     }
   });
 
-  const subject15 = await prisma.subject.create({
+  const subject_ktpm_2 = await prisma.subject.create({
     data: {
-      majorId: major6.id,
-      teacherId: teacher2.id,
+      majorId: majors[1].id,
+      teacherId: teachers[1].id, // Teacher 2
       name: 'Kiểm thử phần mềm',
-      description: 'Unit test, Integration test, E2E test và automation testing',
-      prerequisiteId: subject14.id,
+      description: 'Unit testing, Integration testing, E2E testing. Jest, Mocha, Selenium. Test-Driven Development (TDD).',
+      prerequisiteId: subject_ktpm_1.id,
       order: 2
     }
   });
 
-  const subject16 = await prisma.subject.create({
+  const subject_ktpm_3 = await prisma.subject.create({
     data: {
-      majorId: major6.id,
-      teacherId: teacher2.id,
+      majorId: majors[1].id,
+      teacherId: teachers[1].id, // Teacher 2
       name: 'DevOps và CI/CD',
-      description: 'Docker, Kubernetes, Jenkins, GitHub Actions',
-      prerequisiteId: subject15.id,
+      description: 'Docker, Kubernetes, Jenkins, GitHub Actions. Infrastructure as Code, monitoring và logging.',
+      prerequisiteId: subject_ktpm_2.id,
       order: 3
     }
   });
 
-  // An ninh mạng subjects (major7)
-  const subject17 = await prisma.subject.create({
+  const subject_ktpm_4 = await prisma.subject.create({
     data: {
-      majorId: major7.id,
-      teacherId: teacher7.id,
-      name: 'Cơ sở an ninh mạng',
-      description: 'Các khái niệm cơ bản về bảo mật, mã hóa và xác thực',
+      majorId: majors[1].id,
+      teacherId: teachers[0].id, // Teacher 1
+      name: 'Kiến trúc phần mềm',
+      description: 'Microservices, Monolithic, Clean Architecture, Domain-Driven Design. System design và scalability.',
+      prerequisiteId: subject_ktpm_1.id,
+      order: 4
+    }
+  });
+
+  // === KHOA HỌC DỮ LIỆU (major 2) - Teacher 2 & 3 ===
+  const subject_ds_1 = await prisma.subject.create({
+    data: {
+      majorId: majors[2].id,
+      teacherId: teachers[1].id, // Teacher 2 cũng dạy Data Science
+      name: 'Python cho Data Science',
+      description: 'Python cơ bản, NumPy, Pandas, Matplotlib, Seaborn. Xử lý và visualization dữ liệu.',
       order: 1
     }
   });
 
-  const subject18 = await prisma.subject.create({
+  const subject_ds_2 = await prisma.subject.create({
     data: {
-      majorId: major7.id,
-      teacherId: teacher7.id,
-      name: 'Ethical Hacking',
-      description: 'Kỹ thuật penetration testing và phát hiện lỗ hổng bảo mật',
-      prerequisiteId: subject17.id,
+      majorId: majors[2].id,
+      teacherId: teachers[2].id, // Teacher 3
+      name: 'Thống kê và Xác suất',
+      description: 'Thống kê mô tả, xác suất, phân phối, kiểm định giả thuyết. Ứng dụng trong phân tích dữ liệu.',
       order: 2
     }
   });
 
-  const subject19 = await prisma.subject.create({
+  const subject_ds_3 = await prisma.subject.create({
     data: {
-      majorId: major7.id,
-      teacherId: teacher7.id,
-      name: 'Bảo mật ứng dụng web',
-      description: 'OWASP Top 10, SQL Injection, XSS và cách phòng chống',
-      prerequisiteId: subject17.id,
+      majorId: majors[2].id,
+      teacherId: teachers[2].id, // Teacher 3
+      name: 'Machine Learning cơ bản',
+      description: 'Linear Regression, Logistic Regression, Decision Tree, Random Forest, SVM. Scikit-learn.',
+      prerequisiteId: subject_ds_1.id,
       order: 3
     }
   });
 
-  // Trí tuệ nhân tạo subjects (major8)
-  const subject20 = await prisma.subject.create({
+  const subject_ds_4 = await prisma.subject.create({
     data: {
-      majorId: major8.id,
-      teacherId: teacher4.id,
+      majorId: majors[2].id,
+      teacherId: teachers[2].id, // Teacher 3
       name: 'Deep Learning',
-      description: 'Neural Networks, CNN, RNN và các kiến trúc hiện đại',
-      order: 1
-    }
-  });
-
-  const subject21 = await prisma.subject.create({
-    data: {
-      majorId: major8.id,
-      teacherId: teacher4.id,
-      name: 'Computer Vision',
-      description: 'Xử lý ảnh, nhận dạng đối tượng, face recognition',
-      prerequisiteId: subject20.id,
-      order: 2
-    }
-  });
-
-  const subject22 = await prisma.subject.create({
-    data: {
-      majorId: major8.id,
-      teacherId: teacher4.id,
-      name: 'Natural Language Processing',
-      description: 'Xử lý ngôn ngữ tự nhiên, chatbot, sentiment analysis',
-      prerequisiteId: subject20.id,
-      order: 3
-    }
-  });
-
-  // Kinh tế số subjects (major9)
-  const subject23 = await prisma.subject.create({
-    data: {
-      majorId: major9.id,
-      teacherId: teacher6.id,
-      name: 'Kinh tế học đại cương',
-      description: 'Vi mô, vĩ mô và các nguyên lý kinh tế cơ bản',
-      order: 1
-    }
-  });
-
-  const subject24 = await prisma.subject.create({
-    data: {
-      majorId: major9.id,
-      teacherId: teacher6.id,
-      name: 'Thương mại điện tử',
-      description: 'E-commerce, thanh toán trực tuyến và logistics',
-      prerequisiteId: subject23.id,
-      order: 2
-    }
-  });
-
-  // Ngôn ngữ Anh subjects (major10)
-  const subject25 = await prisma.subject.create({
-    data: {
-      majorId: major10.id,
-      teacherId: teacher8.id,
-      name: 'Tiếng Anh giao tiếp',
-      description: 'Kỹ năng nghe, nói trong giao tiếp hàng ngày',
-      order: 1
-    }
-  });
-
-  const subject26 = await prisma.subject.create({
-    data: {
-      majorId: major10.id,
-      teacherId: teacher8.id,
-      name: 'Tiếng Anh chuyên ngành IT',
-      description: 'Thuật ngữ và kỹ năng tiếng Anh trong lĩnh vực CNTT',
-      prerequisiteId: subject25.id,
-      order: 2
-    }
-  });
-
-  const subject27 = await prisma.subject.create({
-    data: {
-      majorId: major10.id,
-      teacherId: teacher8.id,
-      name: 'TOEIC Preparation',
-      description: 'Luyện thi TOEIC từ 500-900 điểm',
-      prerequisiteId: subject25.id,
-      order: 3
-    }
-  });
-
-  // Marketing số subjects (major11)
-  const subject28 = await prisma.subject.create({
-    data: {
-      majorId: major11.id,
-      teacherId: teacher5.id,
-      name: 'Digital Marketing căn bản',
-      description: 'Tổng quan về marketing số, các kênh và công cụ',
-      order: 1
-    }
-  });
-
-  const subject29 = await prisma.subject.create({
-    data: {
-      majorId: major11.id,
-      teacherId: teacher5.id,
-      name: 'SEO & SEM',
-      description: 'Tối ưu hóa công cụ tìm kiếm và quảng cáo Google Ads',
-      prerequisiteId: subject28.id,
-      order: 2
-    }
-  });
-
-  const subject30 = await prisma.subject.create({
-    data: {
-      majorId: major11.id,
-      teacherId: teacher5.id,
-      name: 'Social Media Marketing',
-      description: 'Marketing trên Facebook, Instagram, TikTok, LinkedIn',
-      prerequisiteId: subject28.id,
-      order: 3
-    }
-  });
-
-  const subject31 = await prisma.subject.create({
-    data: {
-      majorId: major11.id,
-      teacherId: teacher5.id,
-      name: 'Content Marketing',
-      description: 'Xây dựng chiến lược nội dung, copywriting và storytelling',
-      prerequisiteId: subject28.id,
+      description: 'Neural Networks, CNN, RNN, LSTM, Transformer. TensorFlow và PyTorch.',
+      prerequisiteId: subject_ds_3.id,
       order: 4
     }
   });
 
-  // Kế toán - Tài chính subjects (major12)
-  const subject32 = await prisma.subject.create({
+  const subject_ds_5 = await prisma.subject.create({
     data: {
-      majorId: major12.id,
-      teacherId: teacher6.id,
-      name: 'Nguyên lý kế toán',
-      description: 'Các nguyên tắc kế toán cơ bản, sổ sách và báo cáo tài chính',
-      order: 1
-    }
-  });
-
-  const subject33 = await prisma.subject.create({
-    data: {
-      majorId: major12.id,
-      teacherId: teacher6.id,
-      name: 'Kế toán doanh nghiệp',
-      description: 'Kế toán chi phí, doanh thu và quản lý tài sản',
-      prerequisiteId: subject32.id,
-      order: 2
-    }
-  });
-
-  const subject34 = await prisma.subject.create({
-    data: {
-      majorId: major12.id,
-      teacherId: teacher6.id,
-      name: 'Phân tích tài chính',
-      description: 'Phân tích báo cáo tài chính, định giá doanh nghiệp',
-      prerequisiteId: subject33.id,
-      order: 3
-    }
-  });
-
-  const subject35 = await prisma.subject.create({
-    data: {
-      majorId: major12.id,
-      teacherId: teacher6.id,
-      name: 'Thuế và luật kế toán',
-      description: 'Các quy định về thuế, luật kế toán Việt Nam',
-      prerequisiteId: subject32.id,
-      order: 4
-    }
-  });
-
-  console.log('✓ Created 35 subjects across 12 majors');
-
-  // 5. Create Lessons
-  console.log('\n📖 Creating lessons...');
-  
-  // Subject 1: Lập trình cơ bản (5 lessons)
-  const lesson1_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Giới thiệu về lập trình',
-      description: 'Tổng quan về lập trình, các ngôn ngữ lập trình phổ biến',
-      duration: 45,
-      videoUrl: 'https://www.youtube.com/watch?v=example1',
-      order: 1
-    }
-  });
-
-  const lesson1_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Biến và kiểu dữ liệu',
-      description: 'Học về biến, kiểu dữ liệu nguyên thủy và tham chiếu',
-      duration: 60,
-      videoUrl: 'https://www.youtube.com/watch?v=example2',
-      prerequisiteId: lesson1_1.id,
-      order: 2
-    }
-  });
-
-  const lesson1_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Cấu trúc điều khiển',
-      description: 'If-else, switch-case, toán tử logic',
-      duration: 75,
-      videoUrl: 'https://www.youtube.com/watch?v=example3',
-      prerequisiteId: lesson1_2.id,
-      order: 3
-    }
-  });
-
-  const lesson1_4 = await prisma.lesson.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Vòng lặp',
-      description: 'For, while, do-while và nested loops',
-      duration: 90,
-      videoUrl: 'https://www.youtube.com/watch?v=example4',
-      prerequisiteId: lesson1_3.id,
-      order: 4
-    }
-  });
-
-  const lesson1_5 = await prisma.lesson.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Hàm và phạm vi biến',
-      description: 'Định nghĩa hàm, tham số, return, scope',
-      duration: 60,
-      prerequisiteId: lesson1_4.id,
+      majorId: majors[2].id,
+      teacherId: teachers[2].id, // Teacher 3
+      name: 'Big Data và Cloud',
+      description: 'Apache Spark, Hadoop, AWS, GCP. Xử lý dữ liệu lớn trên cloud platform.',
+      prerequisiteId: subject_ds_3.id,
       order: 5
     }
   });
 
-  // Subject 2: CTDL (4 lessons)
-  const lesson2_1 = await prisma.lesson.create({
+  // === AN NINH MẠNG (major 3) - Teacher 1 & 4 ===
+  const subject_anm_1 = await prisma.subject.create({
     data: {
-      subjectId: subject2.id,
-      name: 'Mảng (Array)',
-      description: 'Cấu trúc mảng, các thao tác cơ bản',
-      duration: 60,
+      majorId: majors[3].id,
+      teacherId: teachers[0].id, // Teacher 1 cũng dạy An ninh mạng
+      name: 'Cơ sở an ninh mạng',
+      description: 'Các khái niệm bảo mật, CIA Triad, Authentication, Authorization. Threat modeling.',
       order: 1
     }
   });
 
-  const lesson2_2 = await prisma.lesson.create({
+  const subject_anm_2 = await prisma.subject.create({
     data: {
-      subjectId: subject2.id,
-      name: 'Danh sách liên kết (Linked List)',
-      description: 'Single linked list, double linked list',
-      duration: 75,
-      prerequisiteId: lesson2_1.id,
+      majorId: majors[3].id,
+      teacherId: teachers[3].id, // Teacher 4
+      name: 'Mã hóa và bảo mật',
+      description: 'Symmetric/Asymmetric encryption, Hashing, Digital signatures, PKI, SSL/TLS.',
+      prerequisiteId: subject_anm_1.id,
       order: 2
     }
   });
 
-  const lesson2_3 = await prisma.lesson.create({
+  const subject_anm_3 = await prisma.subject.create({
     data: {
-      subjectId: subject2.id,
-      name: 'Stack và Queue',
-      description: 'LIFO và FIFO, ứng dụng thực tế',
-      duration: 60,
-      prerequisiteId: lesson2_2.id,
+      majorId: majors[3].id,
+      teacherId: teachers[3].id, // Teacher 4
+      name: 'Ethical Hacking',
+      description: 'Penetration testing, Vulnerability assessment, Kali Linux, Metasploit, Burp Suite.',
+      prerequisiteId: subject_anm_2.id,
       order: 3
     }
   });
 
-  const lesson2_4 = await prisma.lesson.create({
+  const subject_anm_4 = await prisma.subject.create({
     data: {
-      subjectId: subject2.id,
-      name: 'Thuật toán sắp xếp',
-      description: 'Bubble sort, Quick sort, Merge sort',
-      duration: 90,
-      prerequisiteId: lesson2_3.id,
+      majorId: majors[3].id,
+      teacherId: teachers[3].id, // Teacher 4
+      name: 'Bảo mật ứng dụng Web',
+      description: 'OWASP Top 10, SQL Injection, XSS, CSRF, Security Headers, WAF.',
+      prerequisiteId: subject_anm_1.id,
       order: 4
     }
   });
 
-  // Subject 7: Python for DS (4 lessons)
-  const lesson7_1 = await prisma.lesson.create({
+  // === THIẾT KẾ ĐỒ HỌA & UI/UX (major 4) - Teacher 5 ===
+  const subject_design_1 = await prisma.subject.create({
     data: {
-      subjectId: subject7.id,
-      name: 'Python cơ bản',
-      description: 'Syntax, data types, control flow trong Python',
-      duration: 60,
+      majorId: majors[4].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'Nguyên lý thiết kế',
+      description: 'Color theory, Typography, Layout, Composition, Visual hierarchy. Gestalt principles.',
       order: 1
     }
   });
 
-  const lesson7_2 = await prisma.lesson.create({
+  const subject_design_2 = await prisma.subject.create({
     data: {
-      subjectId: subject7.id,
-      name: 'NumPy cho khoa học dữ liệu',
-      description: 'Array operations, broadcasting, vectorization',
-      duration: 75,
-      prerequisiteId: lesson7_1.id,
+      majorId: majors[4].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'Adobe Photoshop & Illustrator',
+      description: 'Chỉnh sửa ảnh, thiết kế vector, logo design, poster và ấn phẩm marketing.',
+      prerequisiteId: subject_design_1.id,
       order: 2
     }
   });
 
-  const lesson7_3 = await prisma.lesson.create({
+  const subject_design_3 = await prisma.subject.create({
     data: {
-      subjectId: subject7.id,
-      name: 'Pandas cơ bản',
-      description: 'DataFrame, Series, data manipulation',
-      duration: 90,
-      prerequisiteId: lesson7_2.id,
+      majorId: majors[4].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'UI/UX Design',
+      description: 'User Research, Wireframing, Prototyping, Usability Testing. Figma và Adobe XD.',
+      prerequisiteId: subject_design_1.id,
       order: 3
     }
   });
 
-  const lesson7_4 = await prisma.lesson.create({
+  const subject_design_4 = await prisma.subject.create({
     data: {
-      subjectId: subject7.id,
-      name: 'Data Visualization với Matplotlib',
-      description: 'Vẽ biểu đồ, visualize data insights',
-      duration: 60,
-      prerequisiteId: lesson7_3.id,
+      majorId: majors[4].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'Motion Graphics',
+      description: 'After Effects, animation principles, video editing, intro và outro design.',
+      prerequisiteId: subject_design_2.id,
       order: 4
     }
   });
 
-  // Subject 3: OOP (3 lessons)
-  const lesson3_1 = await prisma.lesson.create({
+  // === MARKETING SỐ (major 5) - Teacher 2 & 5 ===
+  const subject_mkt_1 = await prisma.subject.create({
     data: {
-      subjectId: subject3.id,
-      name: 'Giới thiệu về OOP',
-      description: 'Class, Object, 4 tính chất của OOP',
-      duration: 60,
+      majorId: majors[5].id,
+      teacherId: teachers[1].id, // Teacher 2
+      name: 'Digital Marketing căn bản',
+      description: 'Tổng quan digital marketing, customer journey, marketing funnel, KPIs và metrics.',
       order: 1
     }
   });
 
-  const lesson3_2 = await prisma.lesson.create({
+  const subject_mkt_2 = await prisma.subject.create({
     data: {
-      subjectId: subject3.id,
-      name: 'Encapsulation và Inheritance',
-      description: 'Đóng gói dữ liệu và kế thừa trong OOP',
-      duration: 75,
-      prerequisiteId: lesson3_1.id,
+      majorId: majors[5].id,
+      teacherId: teachers[1].id, // Teacher 2
+      name: 'SEO & SEM',
+      description: 'On-page SEO, Off-page SEO, Technical SEO, Google Ads, Keyword research, Analytics.',
+      prerequisiteId: subject_mkt_1.id,
       order: 2
     }
   });
 
-  const lesson3_3 = await prisma.lesson.create({
+  const subject_mkt_3 = await prisma.subject.create({
     data: {
-      subjectId: subject3.id,
-      name: 'Polymorphism và Abstraction',
-      description: 'Đa hình và trừu tượng hóa',
-      duration: 75,
-      prerequisiteId: lesson3_2.id,
+      majorId: majors[5].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'Social Media Marketing',
+      description: 'Facebook Ads, Instagram, TikTok, LinkedIn. Content calendar, community management.',
+      prerequisiteId: subject_mkt_1.id,
       order: 3
     }
   });
 
-  // Subject 4: Web Dev (4 lessons)
-  const lesson4_1 = await prisma.lesson.create({
+  const subject_mkt_4 = await prisma.subject.create({
     data: {
-      subjectId: subject4.id,
-      name: 'HTML và CSS cơ bản',
-      description: 'Tạo cấu trúc web với HTML, styling với CSS',
-      duration: 90,
-      order: 1
-    }
-  });
-
-  const lesson4_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject4.id,
-      name: 'JavaScript cơ bản',
-      description: 'DOM manipulation, Event handling',
-      duration: 90,
-      prerequisiteId: lesson4_1.id,
-      order: 2
-    }
-  });
-
-  const lesson4_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject4.id,
-      name: 'React Framework',
-      description: 'Components, Props, State, Hooks',
-      duration: 120,
-      prerequisiteId: lesson4_2.id,
-      order: 3
-    }
-  });
-
-  const lesson4_4 = await prisma.lesson.create({
-    data: {
-      subjectId: subject4.id,
-      name: 'Backend với Node.js',
-      description: 'Express.js, REST API, Database',
-      duration: 120,
-      prerequisiteId: lesson4_3.id,
+      majorId: majors[5].id,
+      teacherId: teachers[4].id, // Teacher 5
+      name: 'Content Marketing & Copywriting',
+      description: 'Content strategy, storytelling, copywriting formulas, email marketing, blog writing.',
+      prerequisiteId: subject_mkt_1.id,
       order: 4
     }
   });
 
-  // Subject 5: Giải tích 1 (3 lessons)
-  const lesson5_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject5.id,
-      name: 'Giới hạn và Liên tục',
-      description: 'Khái niệm giới hạn, hàm liên tục',
-      duration: 90,
-      order: 1
+  // Collect all subjects for easy reference
+  const allSubjects = [
+    subject_cntt_1, subject_cntt_2, subject_cntt_3, subject_cntt_4, subject_cntt_5, subject_cntt_6, subject_cntt_7,
+    subject_ktpm_1, subject_ktpm_2, subject_ktpm_3, subject_ktpm_4,
+    subject_ds_1, subject_ds_2, subject_ds_3, subject_ds_4, subject_ds_5,
+    subject_anm_1, subject_anm_2, subject_anm_3, subject_anm_4,
+    subject_design_1, subject_design_2, subject_design_3, subject_design_4,
+    subject_mkt_1, subject_mkt_2, subject_mkt_3, subject_mkt_4
+  ];
+
+  console.log(`✓ Created ${allSubjects.length} subjects`);
+
+  // ============================================
+  // 6. Create Lessons for each subject
+  // ============================================
+  console.log('\n📖 Creating lessons...');
+  
+  const videoUrls = [
+    'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    'https://www.youtube.com/watch?v=jNQXAC9IVRw',
+    'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
+  ];
+
+  let lessonCount = 0;
+  const allLessons = [];
+
+  // Create lessons for CNTT subjects (detailed)
+  const cnttLessons = [
+    // Nhập môn lập trình
+    { subjectId: subject_cntt_1.id, name: 'Giới thiệu về lập trình', description: 'Lập trình là gì? Tại sao cần học lập trình?', order: 1, duration: 1800 },
+    { subjectId: subject_cntt_1.id, name: 'Biến và kiểu dữ liệu', description: 'Int, float, string, boolean và cách khai báo biến', order: 2, duration: 2400 },
+    { subjectId: subject_cntt_1.id, name: 'Câu lệnh điều kiện if-else', description: 'Điều kiện, toán tử so sánh, if-elif-else', order: 3, duration: 2100 },
+    { subjectId: subject_cntt_1.id, name: 'Vòng lặp for và while', description: 'Lặp qua dữ liệu, break và continue', order: 4, duration: 2700 },
+    { subjectId: subject_cntt_1.id, name: 'Hàm trong Python', description: 'Định nghĩa hàm, tham số, return value', order: 5, duration: 3000 },
+    
+    // Cấu trúc dữ liệu
+    { subjectId: subject_cntt_2.id, name: 'Mảng và List', description: 'Array, ArrayList, operations và complexity', order: 1, duration: 2400 },
+    { subjectId: subject_cntt_2.id, name: 'Linked List', description: 'Singly linked list, doubly linked list', order: 2, duration: 2700 },
+    { subjectId: subject_cntt_2.id, name: 'Stack và Queue', description: 'LIFO, FIFO, ứng dụng thực tế', order: 3, duration: 2400 },
+    { subjectId: subject_cntt_2.id, name: 'Thuật toán sắp xếp', description: 'Bubble sort, Quick sort, Merge sort', order: 4, duration: 3600 },
+    
+    // OOP
+    { subjectId: subject_cntt_3.id, name: 'Class và Object', description: 'Định nghĩa class, tạo object, constructor', order: 1, duration: 2400 },
+    { subjectId: subject_cntt_3.id, name: 'Encapsulation', description: 'Private, public, protected, getter/setter', order: 2, duration: 2100 },
+    { subjectId: subject_cntt_3.id, name: 'Inheritance', description: 'Kế thừa, super class, override methods', order: 3, duration: 2700 },
+    { subjectId: subject_cntt_3.id, name: 'Polymorphism', description: 'Đa hình, interface, abstract class', order: 4, duration: 3000 },
+    
+    // Database
+    { subjectId: subject_cntt_4.id, name: 'Giới thiệu SQL', description: 'Relational database, tables, keys', order: 1, duration: 2100 },
+    { subjectId: subject_cntt_4.id, name: 'CRUD Operations', description: 'SELECT, INSERT, UPDATE, DELETE', order: 2, duration: 2700 },
+    { subjectId: subject_cntt_4.id, name: 'JOIN và Subqueries', description: 'INNER JOIN, LEFT JOIN, subquery', order: 3, duration: 3000 },
+    { subjectId: subject_cntt_4.id, name: 'Database Design', description: 'ERD, Normalization, Indexing', order: 4, duration: 3600 },
+    
+    // Frontend
+    { subjectId: subject_cntt_5.id, name: 'HTML5 cơ bản', description: 'Tags, attributes, semantic HTML', order: 1, duration: 2400 },
+    { subjectId: subject_cntt_5.id, name: 'CSS3 và Flexbox', description: 'Styling, layout, responsive design', order: 2, duration: 3000 },
+    { subjectId: subject_cntt_5.id, name: 'JavaScript ES6+', description: 'Variables, functions, DOM manipulation', order: 3, duration: 3600 },
+    { subjectId: subject_cntt_5.id, name: 'React.js cơ bản', description: 'Components, props, state, hooks', order: 4, duration: 4200 },
+    
+    // Backend
+    { subjectId: subject_cntt_6.id, name: 'Node.js fundamentals', description: 'Runtime, modules, npm, event loop', order: 1, duration: 2700 },
+    { subjectId: subject_cntt_6.id, name: 'Express.js', description: 'Routing, middleware, error handling', order: 2, duration: 3000 },
+    { subjectId: subject_cntt_6.id, name: 'RESTful API Design', description: 'HTTP methods, status codes, best practices', order: 3, duration: 3300 },
+    { subjectId: subject_cntt_6.id, name: 'Authentication với JWT', description: 'JSON Web Token, login, protected routes', order: 4, duration: 3600 },
+    
+    // React Native
+    { subjectId: subject_cntt_7.id, name: 'React Native Setup', description: 'Expo, CLI, project structure', order: 1, duration: 2400 },
+    { subjectId: subject_cntt_7.id, name: 'UI Components', description: 'View, Text, Image, ScrollView, FlatList', order: 2, duration: 3000 },
+    { subjectId: subject_cntt_7.id, name: 'Navigation', description: 'React Navigation, Stack, Tab, Drawer', order: 3, duration: 3300 },
+  ];
+
+  for (const lesson of cnttLessons) {
+    const created = await prisma.lesson.create({
+      data: {
+        ...lesson,
+        videoUrl: videoUrls[lessonCount % videoUrls.length],
+        isActive: true
+      }
+    });
+    allLessons.push(created);
+    lessonCount++;
+  }
+
+  // Create lessons for other subjects (4 lessons each)
+  const otherSubjects = [
+    subject_ktpm_1, subject_ktpm_2, subject_ktpm_3, subject_ktpm_4,
+    subject_ds_1, subject_ds_2, subject_ds_3, subject_ds_4, subject_ds_5,
+    subject_anm_1, subject_anm_2, subject_anm_3, subject_anm_4,
+    subject_design_1, subject_design_2, subject_design_3, subject_design_4,
+    subject_mkt_1, subject_mkt_2, subject_mkt_3, subject_mkt_4
+  ];
+
+  const lessonTemplates = [
+    'Giới thiệu và tổng quan',
+    'Khái niệm cơ bản',
+    'Thực hành cơ bản',
+    'Nâng cao và ứng dụng'
+  ];
+
+  for (const subject of otherSubjects) {
+    for (let i = 0; i < lessonTemplates.length; i++) {
+      const lesson = await prisma.lesson.create({
+        data: {
+          subjectId: subject.id,
+          name: `${lessonTemplates[i]}`,
+          description: `Bài học ${i + 1} của môn học`,
+          videoUrl: videoUrls[lessonCount % videoUrls.length],
+          duration: 1800 + Math.floor(Math.random() * 2400),
+          order: i + 1,
+          isActive: true
+        }
+      });
+      allLessons.push(lesson);
+      lessonCount++;
     }
-  });
+  }
 
-  const lesson5_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject5.id,
-      name: 'Đạo hàm',
-      description: 'Định nghĩa đạo hàm, quy tắc tính đạo hàm',
-      duration: 90,
-      prerequisiteId: lesson5_1.id,
-      order: 2
-    }
-  });
+  console.log(`✓ Created ${lessonCount} lessons`);
 
-  const lesson5_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject5.id,
-      name: 'Tích phân',
-      description: 'Tích phân bất định và xác định',
-      duration: 120,
-      prerequisiteId: lesson5_2.id,
-      order: 3
-    }
-  });
-
-  // Subject 6: Đại số tuyến tính (3 lessons)
-  const lesson6_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject6.id,
-      name: 'Ma trận cơ bản',
-      description: 'Khái niệm ma trận, các phép toán ma trận',
-      duration: 75,
-      order: 1
-    }
-  });
-
-  const lesson6_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject6.id,
-      name: 'Định thức và Ma trận nghịch đảo',
-      description: 'Tính định thức, tìm ma trận nghịch đảo',
-      duration: 90,
-      prerequisiteId: lesson6_1.id,
-      order: 2
-    }
-  });
-
-  const lesson6_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject6.id,
-      name: 'Không gian Vector',
-      description: 'Vector, cơ sở, chiều của không gian',
-      duration: 90,
-      prerequisiteId: lesson6_2.id,
-      order: 3
-    }
-  });
-
-  // Subject 8: Machine Learning (4 lessons)
-  const lesson8_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject8.id,
-      name: 'Giới thiệu Machine Learning',
-      description: 'Supervised vs Unsupervised Learning',
-      duration: 60,
-      order: 1
-    }
-  });
-
-  const lesson8_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject8.id,
-      name: 'Linear Regression',
-      description: 'Hồi quy tuyến tính, gradient descent',
-      duration: 90,
-      prerequisiteId: lesson8_1.id,
-      order: 2
-    }
-  });
-
-  const lesson8_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject8.id,
-      name: 'Classification với Decision Tree',
-      description: 'Cây quyết định, overfitting, pruning',
-      duration: 90,
-      prerequisiteId: lesson8_2.id,
-      order: 3
-    }
-  });
-
-  const lesson8_4 = await prisma.lesson.create({
-    data: {
-      subjectId: subject8.id,
-      name: 'Neural Network cơ bản',
-      description: 'Perceptron, backpropagation, activation functions',
-      duration: 120,
-      prerequisiteId: lesson8_3.id,
-      order: 4
-    }
-  });
-
-  // Subject 9: Nguyên lý thiết kế (3 lessons)
-  const lesson9_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject9.id,
-      name: 'Color Theory',
-      description: 'Lý thuyết màu sắc, color wheel, harmony',
-      duration: 75,
-      order: 1
-    }
-  });
-
-  const lesson9_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject9.id,
-      name: 'Typography',
-      description: 'Font pairing, hierarchy, readability',
-      duration: 75,
-      prerequisiteId: lesson9_1.id,
-      order: 2
-    }
-  });
-
-  const lesson9_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject9.id,
-      name: 'Layout và Composition',
-      description: 'Grid system, golden ratio, white space',
-      duration: 90,
-      prerequisiteId: lesson9_2.id,
-      order: 3
-    }
-  });
-
-  // Subject 10: UI/UX (4 lessons)
-  const lesson10_1 = await prisma.lesson.create({
-    data: {
-      subjectId: subject10.id,
-      name: 'UX Research',
-      description: 'User research, persona, user journey',
-      duration: 90,
-      order: 1
-    }
-  });
-
-  const lesson10_2 = await prisma.lesson.create({
-    data: {
-      subjectId: subject10.id,
-      name: 'Wireframing và Prototyping',
-      description: 'Sketch wireframes, interactive prototypes',
-      duration: 90,
-      prerequisiteId: lesson10_1.id,
-      order: 2
-    }
-  });
-
-  const lesson10_3 = await prisma.lesson.create({
-    data: {
-      subjectId: subject10.id,
-      name: 'Visual Design',
-      description: 'UI components, design systems, style guide',
-      duration: 120,
-      prerequisiteId: lesson10_2.id,
-      order: 3
-    }
-  });
-
-  const lesson10_4 = await prisma.lesson.create({
-    data: {
-      subjectId: subject10.id,
-      name: 'Usability Testing',
-      description: 'A/B testing, heatmap, user feedback',
-      duration: 75,
-      prerequisiteId: lesson10_3.id,
-      order: 4
-    }
-  });
-
-  console.log('✓ Created 40 lessons with chain prerequisites');
-
-  // 6. Create Exams
+  // ============================================
+  // 7. Create Exams for subjects
+  // ============================================
   console.log('\n📝 Creating exams...');
   
-  // Exam cho subject 1
-  const exam1 = await prisma.exam.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Kiểm tra giữa kỳ - Lập trình cơ bản',
-      description: 'Bài kiểm tra kiến thức cơ bản về lập trình',
-      duration: 60,
-      passingScore: 60,
-      isRequired: true,
-      order: 1
-    }
-  });
+  let examCount = 0;
+  const allExams = [];
 
-  // Add questions to exam1
-  await prisma.examQuestion.createMany({
-    data: [
-      {
-        examId: exam1.id,
-        question: 'Trong lập trình, biến là gì?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['Một vùng nhớ lưu trữ dữ liệu', 'Một hàm', 'Một vòng lặp', 'Một câu lệnh']),
-        correctAnswer: 'A',
-        points: 2,
-        order: 1
-      },
-      {
-        examId: exam1.id,
-        question: 'Vòng lặp for được sử dụng để làm gì?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['Lặp lại code nhiều lần', 'Kiểm tra điều kiện', 'Khai báo biến', 'In ra màn hình']),
-        correctAnswer: 'A',
-        points: 2,
-        order: 2
-      },
-      {
-        examId: exam1.id,
-        question: 'Python là ngôn ngữ biên dịch?',
-        type: 'TRUE_FALSE',
-        correctAnswer: 'False',
-        points: 1,
-        order: 3
-      },
-      {
-        examId: exam1.id,
-        question: 'Hàm return trong lập trình dùng để làm gì?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['Trả về giá trị từ hàm', 'Khai báo biến', 'Tạo vòng lặp', 'In ra console']),
-        correctAnswer: 'A',
-        points: 2,
-        order: 4
-      },
-      {
-        examId: exam1.id,
-        question: 'Viết code in ra "Hello World" bằng Python',
-        type: 'ESSAY',
-        correctAnswer: 'print("Hello World")',
-        points: 3,
-        order: 5
+  for (const subject of allSubjects) {
+    // Create 1-2 exams per subject
+    const numExams = Math.random() > 0.5 ? 2 : 1;
+    
+    for (let i = 0; i < numExams; i++) {
+      const exam = await prisma.exam.create({
+        data: {
+          subjectId: subject.id,
+          name: i === 0 ? 'Kiểm tra giữa kỳ' : 'Kiểm tra cuối kỳ',
+          description: i === 0 ? 'Kiểm tra kiến thức cơ bản' : 'Kiểm tra tổng hợp kiến thức',
+          duration: i === 0 ? 30 : 60,
+          passingScore: i === 0 ? 60 : 70,
+          order: i + 1,
+          isRequired: i === 1, // Cuối kỳ là bắt buộc
+          isActive: true
+        }
+      });
+      allExams.push(exam);
+      examCount++;
+
+      // Add 5-10 questions per exam
+      const numQuestions = 5 + Math.floor(Math.random() * 6);
+      for (let q = 0; q < numQuestions; q++) {
+        const correctAnswerIndex = Math.floor(Math.random() * 4);
+        await prisma.examQuestion.create({
+          data: {
+            examId: exam.id,
+            question: `Câu hỏi ${q + 1}: Nội dung câu hỏi về kiến thức môn học?`,
+            type: 'MULTIPLE_CHOICE',
+            options: JSON.stringify([
+              'Đáp án A - Đây là một lựa chọn',
+              'Đáp án B - Đây là một lựa chọn khác',
+              'Đáp án C - Đây cũng là một lựa chọn',
+              'Đáp án D - Và đây là lựa chọn cuối'
+            ]),
+            correctAnswer: String(correctAnswerIndex),
+            points: 10,
+            order: q + 1
+          }
+        });
       }
-    ]
-  });
-
-  // Exam cuối kỳ cho subject 1
-  const exam2 = await prisma.exam.create({
-    data: {
-      subjectId: subject1.id,
-      name: 'Thi cuối kỳ - Lập trình cơ bản',
-      description: 'Bài thi tổng hợp toàn bộ kiến thức môn học',
-      duration: 90,
-      passingScore: 70,
-      isRequired: true,
-      order: 2
     }
-  });
+  }
 
-  await prisma.examQuestion.createMany({
-    data: [
-      {
-        examId: exam2.id,
-        question: 'Array trong JavaScript bắt đầu từ index nào?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['0', '1', '-1', 'Tùy ý']),
-        correctAnswer: 'A',
-        points: 1,
-        order: 1
-      },
-      {
-        examId: exam2.id,
-        question: 'Function declaration và function expression có giống nhau không?',
-        type: 'TRUE_FALSE',
-        correctAnswer: 'False',
-        points: 1,
-        order: 2
-      },
-      {
-        examId: exam2.id,
-        question: 'Giải thích khái niệm hoisting trong JavaScript',
-        type: 'ESSAY',
-        correctAnswer: 'Hoisting là cơ chế JavaScript đưa khai báo biến và hàm lên đầu scope',
-        points: 3,
-        order: 3
-      }
-    ]
-  });
+  console.log(`✓ Created ${examCount} exams with questions`);
 
-  // Exam cho subject 2
-  const exam3 = await prisma.exam.create({
-    data: {
-      subjectId: subject2.id,
-      name: 'Kiểm tra CTDL & GT',
-      description: 'Bài kiểm tra về cấu trúc dữ liệu và giải thuật',
-      duration: 75,
-      passingScore: 65,
-      isRequired: true,
-      order: 1
-    }
-  });
-
-  await prisma.examQuestion.createMany({
-    data: [
-      {
-        examId: exam3.id,
-        question: 'Độ phức tạp của Binary Search là?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['O(log n)', 'O(n)', 'O(n²)', 'O(1)']),
-        correctAnswer: 'A',
-        points: 2,
-        order: 1
-      },
-      {
-        examId: exam3.id,
-        question: 'Stack hoạt động theo nguyên tắc LIFO?',
-        type: 'TRUE_FALSE',
-        correctAnswer: 'True',
-        points: 1,
-        order: 2
-      },
-      {
-        examId: exam3.id,
-        question: 'Viết thuật toán tìm phần tử lớn nhất trong mảng',
-        type: 'ESSAY',
-        correctAnswer: 'Duyệt qua mảng, so sánh từng phần tử với max hiện tại',
-        points: 4,
-        order: 3
-      }
-    ]
-  });
-
-  // Exam cho subject 7
-  const exam4 = await prisma.exam.create({
-    data: {
-      subjectId: subject7.id,
-      name: 'Đánh giá Python & Data Science',
-      description: 'Kiểm tra kiến thức Python, NumPy, Pandas',
-      duration: 60,
-      passingScore: 60,
-      isRequired: false,
-      order: 1
-    }
-  });
-
-  await prisma.examQuestion.createMany({
-    data: [
-      {
-        examId: exam4.id,
-        question: 'Pandas DataFrame là gì?',
-        type: 'MULTIPLE_CHOICE',
-        options: JSON.stringify(['Cấu trúc dữ liệu dạng bảng 2D', 'Một mảng 1D', 'Một dictionary', 'Một string']),
-        correctAnswer: 'A',
-        points: 2,
-        order: 1
-      },
-      {
-        examId: exam4.id,
-        question: 'NumPy array nhanh hơn Python list?',
-        type: 'TRUE_FALSE',
-        correctAnswer: 'True',
-        points: 1,
-        order: 2
-      }
-    ]
-  });
-
-  console.log('✓ Created 4 exams with 15 total questions');
-
-  // 7. Enroll users to majors
-  console.log('\n🎒 Creating enrollments...');
+  // ============================================
+  // 8. Create Enrollments (sinh viên vào các major)
+  // ============================================
+  console.log('\n📋 Creating enrollments...');
   
-  // User1 enrolled in major1 (IT)
-  await prisma.enrollment.create({
-    data: {
-      userId: user1.id,
-      majorId: major1.id,
-      status: 'ACTIVE'
-    }
-  });
+  let enrollmentCount = 0;
 
-  // User1 also enrolled in major3 (Data Science)
-  await prisma.enrollment.create({
-    data: {
-      userId: user1.id,
-      majorId: major3.id,
-      status: 'ACTIVE'
-    }
-  });
+  // Phân bổ sinh viên: chủ yếu vào CNTT và Kỹ thuật phần mềm (teacher 1 và 2)
+  // 20 sinh viên → CNTT (major 0)
+  // 10 sinh viên → Kỹ thuật phần mềm (major 1)
+  // 5 sinh viên → Khoa học dữ liệu (major 2)
+  // 2-5 sinh viên mỗi major còn lại
 
-  // User2 enrolled in major2 (Math)
-  await prisma.enrollment.create({
-    data: {
-      userId: user2.id,
-      majorId: major2.id,
-      status: 'ACTIVE'
-    }
-  });
+  for (let i = 0; i < 20; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[0].id, // CNTT
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  // User2 also enrolled in major4 (Design)
-  await prisma.enrollment.create({
-    data: {
-      userId: user2.id,
-      majorId: major4.id,
-      status: 'ACTIVE'
-    }
-  });
+  for (let i = 5; i < 15; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[1].id, // Kỹ thuật phần mềm
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  // User3 enrolled in major1 (IT) - ACTIVE status
-  await prisma.enrollment.create({
-    data: {
-      userId: user3.id,
-      majorId: major1.id,
-      status: 'ACTIVE'
-    }
-  });
+  for (let i = 15; i < 20; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[2].id, // Khoa học dữ liệu
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  // User4 enrolled in major1 (IT) and major6 (Software Engineering)
-  await prisma.enrollment.create({
-    data: {
-      userId: user4.id,
-      majorId: major1.id,
-      status: 'ACTIVE'
-    }
-  });
+  // Các major còn lại
+  for (let i = 20; i < 25; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[3].id, // An ninh mạng
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  await prisma.enrollment.create({
-    data: {
-      userId: user4.id,
-      majorId: major6.id,
-      status: 'ACTIVE'
-    }
-  });
+  for (let i = 25; i < 30; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[4].id, // Thiết kế
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  // User5 enrolled in major3 (Data Science) and major5 (Business)
-  await prisma.enrollment.create({
-    data: {
-      userId: user5.id,
-      majorId: major3.id,
-      status: 'ACTIVE'
-    }
-  });
+  for (let i = 30; i < 37; i++) {
+    await prisma.enrollment.create({
+      data: {
+        userId: students[i].id,
+        majorId: majors[5].id, // Marketing số
+        status: 'ACTIVE'
+      }
+    });
+    enrollmentCount++;
+  }
 
-  await prisma.enrollment.create({
-    data: {
-      userId: user5.id,
-      majorId: major5.id,
-      status: 'ACTIVE'
-    }
-  });
+  console.log(`✓ Created ${enrollmentCount} enrollments`);
 
-  // User6 enrolled in major1 (IT) and major3 (Data Science) - overlaps with user1
-  await prisma.enrollment.create({
-    data: {
-      userId: user6.id,
-      majorId: major1.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  await prisma.enrollment.create({
-    data: {
-      userId: user6.id,
-      majorId: major3.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  // User7 enrolled in major4 (Design) and major5 (Business)
-  await prisma.enrollment.create({
-    data: {
-      userId: user7.id,
-      majorId: major4.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  await prisma.enrollment.create({
-    data: {
-      userId: user7.id,
-      majorId: major5.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  // User8 enrolled in major2 (Math) and major6 (Software Engineering)
-  await prisma.enrollment.create({
-    data: {
-      userId: user8.id,
-      majorId: major2.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  await prisma.enrollment.create({
-    data: {
-      userId: user8.id,
-      majorId: major6.id,
-      status: 'ACTIVE'
-    }
-  });
-
-  console.log('✓ Created 15 enrollments for demo users (user1-user8 across 6 majors)');
-
-  // 8. Create lesson progress
-  console.log('\n📊 Creating lesson progress...');
+  // ============================================
+  // 9. Create Lesson Progress (demo data with varied dates)
+  // ============================================
+  console.log('\n📊 Creating lesson progress with varied dates...');
   
-  // User1 completed first 3 lessons of subject 1
-  await prisma.lessonProgress.create({
-    data: {
-      userId: user1.id,
-      lessonId: lesson1_1.id,
-      watchTime: 45,
-      completed: true,
-      completedAt: new Date('2025-01-05'),
-      faceVerifiedBefore: true,
-      faceVerifiedAfter: true
+  let progressCount = 0;
+
+  // Get lessons from CNTT and KTPM majors for progress (teacher 1 & 2)
+  const teacher1Lessons = allLessons.filter(l => 
+    [subject_cntt_1.id, subject_cntt_2.id, subject_cntt_3.id, subject_cntt_7.id,
+     subject_ktpm_1.id, subject_ktpm_4.id, subject_anm_1.id].includes(l.subjectId)
+  );
+
+  const teacher1And2Lessons = allLessons.filter(l => 
+    [subject_cntt_1.id, subject_cntt_2.id, subject_cntt_3.id, subject_cntt_4.id, subject_cntt_5.id, subject_cntt_6.id, subject_cntt_7.id,
+     subject_ktpm_1.id, subject_ktpm_2.id, subject_ktpm_3.id, subject_ktpm_4.id].includes(l.subjectId)
+  );
+
+  // ⭐ SPECIAL: Create rich data for STUDENT 1 (students[0]) with TEACHER 1
+  console.log('\n  📌 Creating detailed progress for Student 1 (test account)...');
+  const student1 = students[0];
+  
+  // Student 1 completes 15 lessons from Teacher 1's subjects spread across 3 months
+  const student1LessonsToComplete = teacher1Lessons.slice(0, 15);
+  
+  for (let j = 0; j < student1LessonsToComplete.length; j++) {
+    const lesson = student1LessonsToComplete[j];
+    
+    // Spread lessons across last 90 days, with more recent activity
+    let daysAgo;
+    if (j < 5) {
+      daysAgo = 60 + Math.floor(Math.random() * 30); // 60-90 days ago (month 1)
+    } else if (j < 10) {
+      daysAgo = 30 + Math.floor(Math.random() * 30); // 30-60 days ago (month 2) 
+    } else {
+      daysAgo = Math.floor(Math.random() * 30); // 0-30 days ago (month 3 - current)
     }
-  });
+    
+    const completedDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const isCompleted = j < 12; // First 12 are completed, last 3 in progress
+    
+    // WatchTime realistic: completed lessons = duration + 10-50%, in progress = 30-70%
+    const lessonDuration = lesson.duration || 1800;
+    const watchTime = isCompleted 
+      ? lessonDuration + Math.floor(lessonDuration * (0.1 + Math.random() * 0.4))
+      : Math.floor(lessonDuration * (0.3 + Math.random() * 0.4));
+    
+    await prisma.lessonProgress.create({
+      data: {
+        userId: student1.id,
+        lessonId: lesson.id,
+        watchTime: watchTime,
+        completed: isCompleted,
+        completedAt: isCompleted ? completedDate : null,
+        faceVerifiedBefore: true,
+        faceVerifiedAfter: isCompleted,
+        createdAt: completedDate,
+        updatedAt: completedDate
+      }
+    });
+    progressCount++;
+  }
+  console.log(`    ✓ Student 1: ${student1LessonsToComplete.length} lesson progress records`);
 
-  await prisma.lessonProgress.create({
-    data: {
-      userId: user1.id,
-      lessonId: lesson1_2.id,
-      watchTime: 60,
-      completed: true,
-      completedAt: new Date('2025-01-07'),
-      faceVerifiedBefore: true,
-      faceVerifiedAfter: true
+  // Create progress for other students (2-25) with varied data
+  for (let i = 1; i < 25; i++) {
+    const student = students[i];
+    const completedLessons = 3 + Math.floor(Math.random() * 10); // 3-12 lessons
+    const studentLessons = teacher1And2Lessons.slice(0, Math.min(completedLessons + 2, teacher1And2Lessons.length));
+    
+    for (let j = 0; j < studentLessons.length; j++) {
+      const lesson = studentLessons[j];
+      const isCompleted = j < completedLessons;
+      
+      // Random date within last 60 days
+      const daysAgo = Math.floor(Math.random() * 60);
+      const activityDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+      
+      // Realistic watchTime
+      const lessonDuration = lesson.duration || 1800;
+      const watchTime = isCompleted 
+        ? lessonDuration + Math.floor(lessonDuration * Math.random() * 0.3)
+        : Math.floor(lessonDuration * (0.2 + Math.random() * 0.5));
+      
+      await prisma.lessonProgress.create({
+        data: {
+          userId: student.id,
+          lessonId: lesson.id,
+          watchTime: watchTime,
+          completed: isCompleted,
+          completedAt: isCompleted ? activityDate : null,
+          faceVerifiedBefore: true,
+          faceVerifiedAfter: isCompleted,
+          createdAt: activityDate,
+          updatedAt: activityDate
+        }
+      });
+      progressCount++;
     }
-  });
+  }
 
-  await prisma.lessonProgress.create({
-    data: {
-      userId: user1.id,
-      lessonId: lesson1_3.id,
-      watchTime: 50,
-      completed: false, // In progress
-      faceVerifiedBefore: true,
-      faceVerifiedAfter: false
+  console.log(`✓ Created ${progressCount} lesson progress records`);
+
+  // ============================================
+  // 10. Create Exam Attempts (demo data with detailed answers)
+  // ============================================
+  console.log('\n🎯 Creating exam attempts with detailed answers...');
+  
+  let attemptCount = 0;
+
+  // Get exams from Teacher 1's subjects specifically
+  const teacher1Exams = allExams.filter(e => 
+    [subject_cntt_1.id, subject_cntt_2.id, subject_cntt_3.id, subject_cntt_7.id,
+     subject_ktpm_1.id, subject_ktpm_4.id, subject_anm_1.id].includes(e.subjectId)
+  );
+
+  // Get exams from CNTT & KTPM subjects (teacher 1 & 2)
+  const teacher1And2Exams = allExams.filter(e => 
+    [subject_cntt_1.id, subject_cntt_2.id, subject_cntt_3.id, subject_cntt_4.id, subject_cntt_5.id,
+     subject_ktpm_1.id, subject_ktpm_2.id].includes(e.subjectId)
+  );
+
+  // ⭐ SPECIAL: Create detailed exam data for STUDENT 1 with Teacher 1's exams
+  console.log('\n  📌 Creating detailed exam attempts for Student 1...');
+  const student1ExamsToTake = teacher1Exams.slice(0, 5); // 5 exams
+  
+  for (let j = 0; j < student1ExamsToTake.length; j++) {
+    const exam = student1ExamsToTake[j];
+    
+    // Get questions for this exam
+    const examQuestions = await prisma.examQuestion.findMany({
+      where: { examId: exam.id }
+    });
+
+    // Generate realistic answers - student 1 does well (65-85% correct)
+    const answers = {};
+    let correctCount = 0;
+    const targetCorrectRate = 0.65 + Math.random() * 0.20; // 65-85% accuracy
+
+    for (const question of examQuestions) {
+      let userAnswer = '';
+      const isCorrect = Math.random() < targetCorrectRate;
+
+      if (question.type === 'MULTIPLE_CHOICE') {
+        if (isCorrect) {
+          userAnswer = question.correctAnswer;
+          correctCount++;
+        } else {
+          // Pick wrong answer index (0-3 except correct)
+          const correctIdx = parseInt(question.correctAnswer);
+          let wrongIdx = Math.floor(Math.random() * 4);
+          while (wrongIdx === correctIdx) wrongIdx = (wrongIdx + 1) % 4;
+          userAnswer = String(wrongIdx);
+        }
+      } else if (question.type === 'TRUE_FALSE') {
+        if (isCorrect) {
+          userAnswer = question.correctAnswer;
+          correctCount++;
+        } else {
+          userAnswer = question.correctAnswer === 'true' ? 'false' : 'true';
+        }
+      } else {
+        // ESSAY - give partial credit
+        isCorrect && correctCount++;
+        userAnswer = 'Câu trả lời chi tiết của sinh viên về nội dung bài học...';
+      }
+
+      answers[question.id] = userAnswer;
     }
-  });
 
-  // User1 started lesson in Data Science
-  await prisma.lessonProgress.create({
-    data: {
-      userId: user1.id,
-      lessonId: lesson7_1.id,
-      watchTime: 30,
-      completed: false,
-      faceVerifiedBefore: true
+    const totalQuestions = examQuestions.length || 1;
+    const score = Math.round((correctCount / totalQuestions) * 100);
+    const passed = score >= exam.passingScore;
+
+    // Spread exams across 3 months, matching lesson progress timeline
+    let daysAgo;
+    if (j < 2) daysAgo = 50 + Math.floor(Math.random() * 30); // Month 1
+    else if (j < 4) daysAgo = 20 + Math.floor(Math.random() * 25); // Month 2
+    else daysAgo = Math.floor(Math.random() * 15); // Current month
+    
+    const startTime = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const examDuration = exam.duration || 30;
+    const timeTaken = 10 + Math.random() * (examDuration - 5); // 10 mins to almost full time
+    const submitTime = new Date(startTime.getTime() + timeTaken * 60 * 1000);
+    
+    await prisma.examAttempt.create({
+      data: {
+        userId: students[0].id,
+        examId: exam.id,
+        answers: JSON.stringify(answers),
+        score,
+        passed,
+        status: 'GRADED',
+        faceVerifiedStart: true,
+        startedAt: startTime,
+        submittedAt: submitTime
+      }
+    });
+    attemptCount++;
+  }
+  console.log(`    ✓ Student 1: ${student1ExamsToTake.length} exam attempts`);
+
+  // Create attempts for other students (2-20) with DETAILED ANSWERS
+  for (let i = 1; i < 20; i++) {
+    const student = students[i];
+    const numAttempts = 1 + Math.floor(Math.random() * 3); // 1-3 attempts
+    
+    for (let j = 0; j < Math.min(numAttempts, teacher1And2Exams.length); j++) {
+      const exam = teacher1And2Exams[j];
+      
+      // Get questions for this exam
+      const examQuestions = await prisma.examQuestion.findMany({
+        where: { examId: exam.id }
+      });
+
+      // Generate detailed answers for each question
+      const answers = {};
+      let correctCount = 0;
+
+      for (const question of examQuestions) {
+        let userAnswer = '';
+        let isCorrect = false;
+
+        if (question.type === 'MULTIPLE_CHOICE') {
+          // 50-65% chance of correct answer
+          isCorrect = Math.random() < (0.5 + Math.random() * 0.15);
+          
+          if (isCorrect) {
+            userAnswer = question.correctAnswer;
+          } else {
+            const correctIdx = parseInt(question.correctAnswer);
+            let wrongIdx = Math.floor(Math.random() * 4);
+            while (wrongIdx === correctIdx) wrongIdx = (wrongIdx + 1) % 4;
+            userAnswer = String(wrongIdx);
+          }
+        } else if (question.type === 'TRUE_FALSE') {
+          isCorrect = Math.random() < 0.55;
+          userAnswer = isCorrect ? question.correctAnswer : (question.correctAnswer === 'true' ? 'false' : 'true');
+        } else {
+          // ESSAY
+          isCorrect = Math.random() < 0.5;
+          userAnswer = 'Câu trả lời của học viên...';
+        }
+
+        answers[question.id] = userAnswer;
+        if (isCorrect) correctCount++;
+      }
+
+      const totalQuestions = examQuestions.length || 1;
+      const score = Math.round((correctCount / totalQuestions) * 100);
+      const passed = score >= exam.passingScore;
+
+      // Random date within last 45 days
+      const daysAgo = Math.floor(Math.random() * 45);
+      const startTime = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+      const submitTime = new Date(startTime.getTime() + (15 + Math.random() * 45) * 60 * 1000);
+      
+      await prisma.examAttempt.create({
+        data: {
+          userId: student.id,
+          examId: exam.id,
+          answers: JSON.stringify(answers),
+          score,
+          passed,
+          status: 'GRADED',
+          faceVerifiedStart: true,
+          startedAt: startTime,
+          submittedAt: submitTime
+        }
+      });
+      attemptCount++;
     }
-  });
+  }
 
-  console.log('✓ Created 4 lesson progress records');
+  console.log(`✓ Created ${attemptCount} exam attempts with detailed answers`);
 
-  // 9. Create blog posts
+  // ============================================
+  // 11. Create Blog Posts (demo)
+  // ============================================
   console.log('\n📰 Creating blog posts...');
   
-  const blogPost1 = await prisma.blogPost.create({
-    data: {
-      userId: user1.id,
-      title: 'Những tips học lập trình hiệu quả cho người mới bắt đầu',
-      content: `# Giới thiệu
-      
-Học lập trình không khó nếu bạn có phương pháp đúng. Dưới đây là những tips tôi đúc kết được:
-
-## 1. Practice makes perfect
-Hãy code mỗi ngày, dù chỉ 30 phút.
-
-## 2. Đọc code của người khác
-GitHub là kho báu vô tận để học hỏi.
-
-## 3. Build projects
-Đừng chỉ học lý thuyết, hãy làm dự án thực tế.`,
+  const blogPostsData = [
+    {
+      title: 'Hướng dẫn bắt đầu học lập trình từ con số 0',
+      content: 'Bài viết chia sẻ kinh nghiệm và lộ trình học lập trình cho người mới bắt đầu. Từ việc chọn ngôn ngữ đầu tiên đến cách xây dựng dự án thực tế. Lập trình không khó như bạn nghĩ, quan trọng là sự kiên trì và phương pháp học đúng.',
+      userId: teachers[0].id,
       published: true,
-      views: 234,
-      createdAt: new Date('2025-01-10')
-    }
-  });
-
-  const blogPost2 = await prisma.blogPost.create({
-    data: {
-      userId: user2.id,
-      title: 'Machine Learning cho người mới - Bắt đầu từ đâu?',
-      content: `# Machine Learning Roadmap
-
-## Bước 1: Nền tảng toán học
-- Linear Algebra
-- Statistics & Probability
-- Calculus
-
-## Bước 2: Python & Libraries
-- NumPy, Pandas
-- Scikit-learn
-- TensorFlow/PyTorch
-
-## Bước 3: Các thuật toán cơ bản
-- Linear Regression
-- Logistic Regression
-- Decision Trees
-- Neural Networks`,
+      views: 125
+    },
+    {
+      title: '5 sai lầm phổ biến khi học Frontend',
+      content: 'Những sai lầm mà hầu hết người học Frontend hay mắc phải và cách khắc phục để tiến bộ nhanh hơn. 1. Chỉ học framework mà bỏ qua JavaScript cơ bản. 2. Không thực hành đủ. 3. Copy paste code không hiểu. 4. Không học responsive design. 5. Bỏ qua performance optimization.',
+      userId: teachers[1].id,
       published: true,
-      views: 456,
-      createdAt: new Date('2025-01-15')
-    }
-  });
-
-  const blogPost3 = await prisma.blogPost.create({
-    data: {
-      userId: user1.id,
-      title: 'React vs Vue vs Angular - Framework nào phù hợp với bạn?',
-      content: `# So sánh Frontend Frameworks
-
-## React
-- Linh hoạt, ecosystem lớn
-- JSX syntax
-- Được Facebook phát triển
-
-## Vue
-- Dễ học, documentation tốt
-- Template syntax
-- Progressive framework
-
-## Angular
-- Full-featured, TypeScript
-- Enterprise-ready
-- Được Google phát triển`,
+      views: 98
+    },
+    {
+      title: 'Tại sao nên học Data Science năm 2025?',
+      content: 'Phân tích xu hướng nghề nghiệp và cơ hội việc làm trong lĩnh vực Data Science. Với sự bùng nổ của AI và Machine Learning, Data Science đang là một trong những nghề hot nhất. Mức lương trung bình cho Data Scientist tại Việt Nam dao động từ 20-50 triệu/tháng.',
+      userId: teachers[2].id,
       published: true,
-      views: 189,
-      createdAt: new Date('2025-01-20')
-    }
-  });
-
-  const blogPost4 = await prisma.blogPost.create({
-    data: {
-      userId: user2.id,
-      title: 'UI/UX Design Principles mọi developer nên biết',
-      content: `# UI/UX Best Practices
-
-## 1. Consistency
-Giữ nhất quán trong thiết kế
-
-## 2. Feedback
-Luôn có response với user action
-
-## 3. Simplicity
-Đơn giản là tốt nhất
-
-## 4. Accessibility
-Thiết kế cho tất cả mọi người`,
+      views: 156
+    },
+    {
+      title: 'Bảo mật web: Những điều cơ bản cần biết',
+      content: 'Tổng hợp kiến thức bảo mật web cơ bản dành cho developer. SQL Injection, XSS, CSRF là những lỗ hổng phổ biến nhất. Luôn validate input, escape output, sử dụng prepared statements và implement HTTPS.',
+      userId: teachers[3].id,
       published: true,
-      views: 312,
-      createdAt: new Date('2025-01-25')
-    }
-  });
-
-  const blogPost5 = await prisma.blogPost.create({
-    data: {
-      userId: user4.id,
-      title: 'Docker và Kubernetes cho newbie - Hướng dẫn từ A-Z',
-      content: `# DevOps cho người mới
-
-## Docker là gì?
-Container hóa ứng dụng để deploy dễ dàng
-
-## Kubernetes là gì?
-Orchestration tool để quản lý containers
-
-## Bắt đầu từ đâu?
-1. Học Docker cơ bản
-2. Viết Dockerfile
-3. Docker Compose
-4. Kubernetes concepts
-5. Deploy lên cloud`,
+      views: 87
+    },
+    {
+      title: 'Xu hướng thiết kế UI/UX năm 2025',
+      content: 'Những xu hướng thiết kế mới nhất và cách áp dụng vào dự án thực tế. Minimalism vẫn là xu hướng chủ đạo, kết hợp với Dark mode, Glassmorphism và 3D elements. User experience luôn được đặt lên hàng đầu.',
+      userId: teachers[4].id,
       published: true,
-      views: 523,
-      createdAt: new Date('2025-01-28')
-    }
-  });
-
-  const blogPost6 = await prisma.blogPost.create({
-    data: {
-      userId: user5.id,
-      title: 'Data Science vs Data Analytics - Bạn nên chọn gì?',
-      content: `# So sánh hai con đường
-
-## Data Analytics
-- Phân tích dữ liệu hiện tại
-- SQL, Excel, Power BI
-- Business insights
-- Entry-level dễ hơn
-
-## Data Science
-- Dự đoán tương lai
-- Python, ML, AI
-- Build models
-- Yêu cầu toán cao hơn
-
-## Lời khuyên
-Bắt đầu với Data Analytics, sau đó chuyển sang Data Science nếu thích!`,
+      views: 142
+    },
+    {
+      title: 'Lộ trình học Full Stack Developer',
+      content: 'Hướng dẫn chi tiết cách trở thành Full Stack Developer trong 12 tháng. Tháng 1-3: HTML/CSS/JS. Tháng 4-6: React + Node.js. Tháng 7-9: Database + API. Tháng 10-12: DevOps + Projects. Kiên trì mỗi ngày 2-3 tiếng là đủ.',
+      userId: teachers[0].id,
       published: true,
-      views: 687,
-      createdAt: new Date('2025-02-01')
-    }
-  });
-
-  const blogPost7 = await prisma.blogPost.create({
-    data: {
-      userId: user6.id,
-      title: 'Top 10 thuật toán phải biết cho coding interview',
-      content: `# Algorithms cho Interview
-
-## 1. Binary Search
-## 2. Two Pointers
-## 3. Sliding Window
-## 4. BFS/DFS
-## 5. Dynamic Programming
-## 6. Backtracking
-## 7. Merge Sort
-## 8. Quick Sort
-## 9. Dijkstra Algorithm
-## 10. Union Find
-
-Practice trên LeetCode mỗi ngày!`,
+      views: 203
+    },
+    {
+      title: 'Agile/Scrum trong thực tế',
+      content: 'Kinh nghiệm áp dụng Agile/Scrum vào dự án thực tế từ một tech lead. Sprint planning, daily standup, retrospective không phải là hình thức. Quan trọng là team communication và flexibility. Đừng too strict với process.',
+      userId: teachers[1].id,
       published: true,
-      views: 892,
-      createdAt: new Date('2025-02-05')
-    }
-  });
-
-  const blogPost8 = await prisma.blogPost.create({
-    data: {
-      userId: user7.id,
-      title: 'Figma Tips & Tricks cho designer năm 2025',
-      content: `# Figma Advanced Techniques
-
-## Auto Layout
-Tạo responsive designs dễ dàng
-
-## Components & Variants
-Tái sử dụng elements hiệu quả
-
-## Plugins must-have
-- Iconify
-- Unsplash
-- Content Reel
-- Remove BG
-
-## Shortcuts
-Ctrl+G: Group
-Ctrl+Shift+K: Place image
-Ctrl+Alt+C: Copy properties`,
+      views: 76
+    },
+    {
+      title: 'Docker và Kubernetes cho người mới bắt đầu',
+      content: 'Container hóa ứng dụng với Docker giúp deployment dễ dàng và consistency across environments. Kubernetes orchestrate containers ở scale lớn. Bắt đầu với Docker Compose trước khi nhảy vào K8s.',
+      userId: teachers[1].id,
       published: true,
-      views: 445,
-      createdAt: new Date('2025-02-08')
+      views: 134
     }
-  });
+  ];
 
-  const blogPost9 = await prisma.blogPost.create({
-    data: {
-      userId: user8.id,
-      title: 'API Design Best Practices - RESTful vs GraphQL',
-      content: `# Thiết kế API hiện đại
-
-## RESTful API
-- Dễ hiểu, dễ implement
-- HTTP methods: GET, POST, PUT, DELETE
-- Stateless
-- Good for CRUD operations
-
-## GraphQL
-- Query exactly what you need
-- Single endpoint
-- No over-fetching
-- Better for complex data relationships
-
-## Khi nào dùng cái nào?
-RESTful: Simple CRUD apps
-GraphQL: Complex data requirements`,
-      published: true,
-      views: 621,
-      createdAt: new Date('2025-02-10')
-    }
-  });
-
-  const blogPost10 = await prisma.blogPost.create({
-    data: {
-      userId: user1.id,
-      title: 'Git & GitHub workflows cho team collaboration',
-      content: `# Git Best Practices
-
-## Branch Strategy
-- main: production code
-- develop: integration branch
-- feature/*: new features
-- hotfix/*: urgent fixes
-
-## Commit Messages
-feat: new feature
-fix: bug fix
-docs: documentation
-refactor: code refactoring
-test: add tests
-
-## Pull Request Tips
-- Keep PRs small
-- Write good descriptions
-- Review carefully
-- Use CI/CD`,
-      published: true,
-      views: 734,
-      createdAt: new Date('2025-02-12')
-    }
-  });
-
-  const blogPost11 = await prisma.blogPost.create({
-    data: {
-      userId: user3.id,
-      title: 'CSS Flexbox vs Grid - Khi nào dùng cái nào?',
-      content: `# Layout trong CSS
-
-## Flexbox
-- One-dimensional (row hoặc column)
-- Align items dễ dàng
-- Responsive navigation bars
-- Card layouts
-
-## Grid
-- Two-dimensional (rows và columns)
-- Complex layouts
-- Magazine-style designs
-- Full page layouts
-
-## Pro tip
-Kết hợp cả hai cho layouts phức tạp!`,
-      published: true,
-      views: 456,
-      createdAt: new Date('2025-02-14')
-    }
-  });
-
-  const blogPost12 = await prisma.blogPost.create({
-    data: {
-      userId: user4.id,
-      title: 'Microservices Architecture cho beginners',
-      content: `# Microservices 101
-
-## Monolith vs Microservices
-Monolith: All in one
-Microservices: Separate services
-
-## Ưu điểm
-- Independent deployment
-- Technology flexibility
-- Scalability
-- Team autonomy
-
-## Nhược điểm
-- Complexity
-- Distributed system challenges
-- More DevOps work
-
-## Khi nào nên dùng?
-Large apps, multiple teams, need scale`,
-      published: true,
-      views: 512,
-      createdAt: new Date('2025-02-16')
-    }
-  });
-
-  console.log('✓ Created 12 blog posts from various users');
-
-  // 10. Create tags and Q&A
-  console.log('\n🏷️ Creating tags and questions...');
-  
-  const tag1 = await prisma.tag.upsert({
-    where: { name: 'javascript' },
-    update: {},
-    create: { name: 'javascript', description: 'Câu hỏi về JavaScript' }
-  });
-
-  const tag2 = await prisma.tag.upsert({
-    where: { name: 'python' },
-    update: {},
-    create: { name: 'python', description: 'Câu hỏi về Python' }
-  });
-
-  const tag3 = await prisma.tag.upsert({
-    where: { name: 'react' },
-    update: {},
-    create: { name: 'react', description: 'Câu hỏi về React' }
-  });
-
-  const tag4 = await prisma.tag.upsert({
-    where: { name: 'algorithms' },
-    update: {},
-    create: { name: 'algorithms', description: 'Câu hỏi về thuật toán' }
-  });
-
-  const tag5 = await prisma.tag.upsert({
-    where: { name: 'database' },
-    update: {},
-    create: { name: 'database', description: 'Câu hỏi về cơ sở dữ liệu' }
-  });
-
-  const tag6 = await prisma.tag.upsert({
-    where: { name: 'docker' },
-    update: {},
-    create: { name: 'docker', description: 'DevOps và containerization' }
-  });
-
-  const tag7 = await prisma.tag.upsert({
-    where: { name: 'data-science' },
-    update: {},
-    create: { name: 'data-science', description: 'Data Science và ML' }
-  });
-
-  const tag8 = await prisma.tag.upsert({
-    where: { name: 'design' },
-    update: {},
-    create: { name: 'design', description: 'UI/UX Design' }
-  });
-
-  const tag9 = await prisma.tag.upsert({
-    where: { name: 'api' },
-    update: {},
-    create: { name: 'api', description: 'API Design' }
-  });
-
-  const tag10 = await prisma.tag.upsert({
-    where: { name: 'git' },
-    update: {},
-    create: { name: 'git', description: 'Git và version control' }
-  });
-
-  const tag11 = await prisma.tag.upsert({
-    where: { name: 'css' },
-    update: {},
-    create: { name: 'css', description: 'CSS và styling' }
-  });
-
-  const tag12 = await prisma.tag.upsert({
-    where: { name: 'architecture' },
-    update: {},
-    create: { name: 'architecture', description: 'Software architecture' }
-  });
-
-  // Link tags to blog posts
-  await prisma.blogPostTag.createMany({
-    data: [
-      { blogPostId: blogPost1.id, tagId: tag1.id },
-      { blogPostId: blogPost1.id, tagId: tag3.id },
-      { blogPostId: blogPost2.id, tagId: tag2.id },
-      { blogPostId: blogPost2.id, tagId: tag7.id },
-      { blogPostId: blogPost3.id, tagId: tag1.id },
-      { blogPostId: blogPost3.id, tagId: tag3.id },
-      { blogPostId: blogPost4.id, tagId: tag3.id },
-      { blogPostId: blogPost4.id, tagId: tag8.id },
-      { blogPostId: blogPost5.id, tagId: tag6.id },
-      { blogPostId: blogPost6.id, tagId: tag2.id },
-      { blogPostId: blogPost6.id, tagId: tag7.id },
-      { blogPostId: blogPost7.id, tagId: tag4.id },
-      { blogPostId: blogPost7.id, tagId: tag2.id },
-      { blogPostId: blogPost8.id, tagId: tag8.id },
-      { blogPostId: blogPost9.id, tagId: tag9.id },
-      { blogPostId: blogPost10.id, tagId: tag10.id },
-      { blogPostId: blogPost11.id, tagId: tag11.id },
-      { blogPostId: blogPost12.id, tagId: tag12.id }
-    ]
-  });
-
-  console.log('✓ Created 12 tags and linked to 12 blog posts');
-
-  // Question 1
-  const question1 = await prisma.question.create({
-    data: {
-      userId: user1.id,
-      subjectId: subject1.id,
-      title: 'Sự khác nhau giữa let và var trong JavaScript?',
-      content: `Tôi đang học JavaScript và thấy có cả let và var để khai báo biến. 
-
-Ai có thể giải thích rõ sự khác biệt giữa chúng không? Khi nào nên dùng let, khi nào dùng var?
-
-Cảm ơn!`,
-      status: 'OPEN',
-      views: 145,
-      createdAt: new Date('2025-01-12')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question1.id, tagId: tag1.id }
-    ]
-  });
-
-  await prisma.answer.create({
-    data: {
-      questionId: question1.id,
-      userId: user2.id,
-      content: `Có 3 điểm khác biệt chính:
-
-1. **Scope**: 
-   - \`var\` có function scope
-   - \`let\` có block scope
-
-2. **Hoisting**:
-   - \`var\` bị hoisting và có thể dùng trước khi khai báo (undefined)
-   - \`let\` cũng bị hoisting nhưng nằm trong temporal dead zone
-
-3. **Re-declaration**:
-   - \`var\` có thể khai báo lại trong cùng scope
-   - \`let\` không cho phép khai báo lại
-
-**Khuyến nghị**: Luôn dùng \`let\` hoặc \`const\`, tránh dùng \`var\` trong code mới.`,
-      isAccepted: true,
-      createdAt: new Date('2025-01-12')
-    }
-  });
-
-  // Question 2
-  const question2 = await prisma.question.create({
-    data: {
-      userId: user2.id,
-      subjectId: subject2.id,
-      title: 'Làm thế nào để đảo ngược một linked list?',
-      content: `Mình đang học về linked list và bị stuck ở bài tập đảo ngược linked list.
-
-Có ai có thể giải thích thuật toán và cho ví dụ code không ạ?`,
-      status: 'OPEN',
-      views: 89,
-      createdAt: new Date('2025-01-18')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question2.id, tagId: tag4.id }
-    ]
-  });
-
-  await prisma.answer.createMany({
-    data: [
-      {
-        questionId: question2.id,
-        userId: user1.id,
-        content: `Có 2 cách chính:
-
-**Cách 1: Iterative**
-\`\`\`javascript
-function reverseList(head) {
-  let prev = null;
-  let curr = head;
-  
-  while (curr !== null) {
-    let next = curr.next;
-    curr.next = prev;
-    prev = curr;
-    curr = next;
+  const blogPosts = [];
+  for (const post of blogPostsData) {
+    const created = await prisma.blogPost.create({ data: post });
+    blogPosts.push(created);
   }
-  
-  return prev;
-}
-\`\`\`
 
-**Cách 2: Recursive**
-\`\`\`javascript
-function reverseList(head) {
-  if (!head || !head.next) return head;
-  
-  let newHead = reverseList(head.next);
-  head.next.next = head;
-  head.next = null;
-  
-  return newHead;
-}
-\`\`\`
+  console.log(`✓ Created ${blogPosts.length} blog posts`);
 
-Cách 1 dễ hiểu hơn cho người mới học!`,
-        createdAt: new Date('2025-01-18')
-      }
-    ]
-  });
+  // ============================================
+  // 12. Create Tags
+  // ============================================
+  console.log('\n🏷️  Creating tags...');
+  
+  const tagsData = [
+    { name: 'JavaScript', description: 'JavaScript programming language' },
+    { name: 'Python', description: 'Python programming language' },
+    { name: 'React', description: 'React.js framework' },
+    { name: 'Node.js', description: 'Node.js runtime' },
+    { name: 'Database', description: 'Database related topics' },
+    { name: 'Frontend', description: 'Frontend development' },
+    { name: 'Backend', description: 'Backend development' },
+    { name: 'DevOps', description: 'DevOps practices' },
+    { name: 'Security', description: 'Web security' },
+    { name: 'UI/UX', description: 'User interface and experience' },
+    { name: 'Beginner', description: 'Beginner friendly content' },
+    { name: 'Advanced', description: 'Advanced topics' }
+  ];
 
-  // Question 3
-  const question3 = await prisma.question.create({
+  const tags = [];
+  for (const t of tagsData) {
+    const tag = await prisma.tag.create({ data: t });
+    tags.push(tag);
+  }
+
+  console.log(`✓ Created ${tags.length} tags`);
+
+  // ============================================
+  // 13. Link Tags to Blog Posts
+  // ============================================
+  console.log('\n🔗 Linking tags to blog posts...');
+  
+  let blogPostTagCount = 0;
+
+  // Blog 1: Hướng dẫn bắt đầu học lập trình - Python, Beginner
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[0].id, tagId: tags[1].id } }); // Python
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[0].id, tagId: tags[10].id } }); // Beginner
+  blogPostTagCount += 2;
+
+  // Blog 2: 5 sai lầm Frontend - JavaScript, React, Frontend
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[1].id, tagId: tags[0].id } }); // JavaScript
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[1].id, tagId: tags[2].id } }); // React
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[1].id, tagId: tags[5].id } }); // Frontend
+  blogPostTagCount += 3;
+
+  // Blog 3: Data Science - Python, Advanced
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[2].id, tagId: tags[1].id } }); // Python
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[2].id, tagId: tags[11].id } }); // Advanced
+  blogPostTagCount += 2;
+
+  // Blog 4: Bảo mật web - Security, Backend
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[3].id, tagId: tags[8].id } }); // Security
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[3].id, tagId: tags[6].id } }); // Backend
+  blogPostTagCount += 2;
+
+  // Blog 5: UI/UX - UI/UX, Frontend
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[4].id, tagId: tags[9].id } }); // UI/UX
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[4].id, tagId: tags[5].id } }); // Frontend
+  blogPostTagCount += 2;
+
+  // Blog 6: Full Stack - JavaScript, React, Node.js
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[5].id, tagId: tags[0].id } }); // JavaScript
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[5].id, tagId: tags[2].id } }); // React
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[5].id, tagId: tags[3].id } }); // Node.js
+  blogPostTagCount += 3;
+
+  // Blog 7: Agile/Scrum - Advanced
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[6].id, tagId: tags[11].id } }); // Advanced
+  blogPostTagCount += 1;
+
+  // Blog 8: Docker/Kubernetes - DevOps, Advanced
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[7].id, tagId: tags[7].id } }); // DevOps
+  await prisma.blogPostTag.create({ data: { blogPostId: blogPosts[7].id, tagId: tags[11].id } }); // Advanced
+  blogPostTagCount += 2;
+
+  console.log(`✓ Created ${blogPostTagCount} blog post tags`);
+
+  // ============================================
+  // 14. Create Comments on Blog Posts
+  // ============================================
+  console.log('\n💬 Creating comments on blog posts...');
+  
+  let commentCount = 0;
+
+  // Comments on blog 1 (Hướng dẫn lập trình)
+  await prisma.comment.create({
     data: {
-      userId: user1.id,
-      subjectId: subject7.id,
-      title: 'Pandas DataFrame vs NumPy Array - Khi nào nên dùng cái nào?',
-      content: `Mình đang học Data Science và hơi confuse giữa Pandas DataFrame và NumPy array.
+      postId: blogPosts[0].id,
+      userId: students[0].id,
+      content: 'Bài viết rất hữu ích cho người mới bắt đầu như em. Cảm ơn thầy!'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[0].id,
+      userId: students[1].id,
+      content: 'Em đang theo lộ trình này và thấy hiệu quả ạ. Cảm ơn thầy đã chia sẻ.'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[0].id,
+      userId: students[5].id,
+      content: 'Thầy có thể làm thêm video hướng dẫn chi tiết hơn được không ạ?'
+    }
+  });
+  commentCount += 3;
 
-Khi nào thì nên dùng DataFrame, khi nào dùng array? Chúng khác nhau như thế nào về performance?`,
-      status: 'OPEN',
+  // Comments on blog 2 (Frontend)
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[1].id,
+      userId: students[2].id,
+      content: 'Em đã mắc sai lầm số 1 rồi 😅 Giờ em sẽ học lại JavaScript cơ bản.'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[1].id,
+      userId: students[3].id,
+      content: 'Bài viết chính xác quá! Responsive design rất quan trọng nhưng nhiều bạn hay bỏ qua.'
+    }
+  });
+  commentCount += 2;
+
+  // Comments on blog 3 (Data Science)
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[2].id,
+      userId: students[15].id,
+      content: 'Em đang học Data Science và thấy triển vọng nghề này rất tốt. Thanks for sharing!'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[2].id,
+      userId: students[16].id,
+      content: 'Thầy có thể giới thiệu thêm về roadmap học Machine Learning không ạ?'
+    }
+  });
+  commentCount += 2;
+
+  // Comments on blog 6 (Full Stack)
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[5].id,
+      userId: students[4].id,
+      content: 'Lộ trình này rất chi tiết! Em sẽ theo đúng và báo cáo kết quả sau 12 tháng.'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[5].id,
+      userId: students[6].id,
+      content: 'Em nghĩ 12 tháng hơi gấp, nhưng nếu kiên trì thì được. Cảm ơn thầy!'
+    }
+  });
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[5].id,
+      userId: students[10].id,
+      content: 'DevOps có khó không thầy? Em đang lo phần này.'
+    }
+  });
+  commentCount += 3;
+
+  // Comment from teacher on student question
+  await prisma.comment.create({
+    data: {
+      postId: blogPosts[5].id,
+      userId: teachers[0].id,
+      content: 'DevOps không khó nếu em có nền tảng Backend tốt. Bắt đầu với Docker là được rồi!'
+    }
+  });
+  commentCount += 1;
+
+  console.log(`✓ Created ${commentCount} comments`);
+
+  // ============================================
+  // 15. Create Questions (Q&A System)
+  // ============================================
+  console.log('\n❓ Creating questions...');
+  
+  const questionsData = [
+    {
+      userId: students[0].id,
+      subjectId: subject_cntt_1.id,
+      lessonId: allLessons.find(l => l.subjectId === subject_cntt_1.id && l.order === 2)?.id,
+      title: 'Sự khác biệt giữa list và tuple trong Python?',
+      content: 'Em đang học về kiểu dữ liệu trong Python, không hiểu rõ sự khác biệt giữa list và tuple. Khi nào thì dùng list, khi nào dùng tuple ạ?',
+      views: 45,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[1].id,
+      subjectId: subject_cntt_2.id,
+      title: 'Time complexity của Quick Sort là gì?',
+      content: 'Em biết Quick Sort có average case là O(n log n) nhưng worst case là O(n²). Vậy làm sao để tránh worst case ạ?',
+      views: 32,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[2].id,
+      subjectId: subject_cntt_3.id,
+      title: 'Abstract class vs Interface - khi nào dùng cái nào?',
+      content: 'Em thấy abstract class và interface khá giống nhau. Cho em hỏi trong thực tế thì dùng cái nào khi nào ạ?',
+      views: 58,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[3].id,
+      subjectId: subject_cntt_4.id,
+      lessonId: allLessons.find(l => l.subjectId === subject_cntt_4.id && l.order === 3)?.id,
+      title: 'LEFT JOIN vs INNER JOIN khác nhau như thế nào?',
+      content: 'Em hay bị nhầm lẫn giữa LEFT JOIN và INNER JOIN. Thầy có thể giải thích bằng ví dụ được không ạ?',
       views: 67,
-      createdAt: new Date('2025-01-22')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question3.id, tagId: tag2.id }
-    ]
-  });
-
-  // Question 4
-  const question4 = await prisma.question.create({
-    data: {
-      userId: user4.id,
-      subjectId: subject3.id,
-      title: 'SQL JOIN types - INNER, LEFT, RIGHT, FULL OUTER',
-      content: `Mình đang học SQL và bị rối về các loại JOIN.
-
-Có ai có thể giải thích sự khác nhau giữa INNER JOIN, LEFT JOIN, RIGHT JOIN và FULL OUTER JOIN không?
-
-Khi nào thì dùng loại nào?`,
-      status: 'OPEN',
-      views: 234,
-      createdAt: new Date('2025-01-26')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question4.id, tagId: tag5.id }
-    ]
-  });
-
-  await prisma.answer.create({
-    data: {
-      questionId: question4.id,
-      userId: user5.id,
-      content: `Để dễ hiểu:
-
-**INNER JOIN**: Chỉ lấy records có match ở CẢ 2 tables
-\`\`\`sql
-SELECT * FROM users u
-INNER JOIN orders o ON u.id = o.user_id
--- Chỉ lấy users có orders
-\`\`\`
-
-**LEFT JOIN**: Lấy TẤT CẢ từ bảng bên trái + matching từ bảng phải
-\`\`\`sql
-SELECT * FROM users u
-LEFT JOIN orders o ON u.id = o.user_id
--- Lấy tất cả users, kể cả không có orders
-\`\`\`
-
-**RIGHT JOIN**: Ngược lại với LEFT JOIN
-
-**FULL OUTER JOIN**: Lấy tất cả từ cả 2 bảng
-
-Hay dùng nhất là INNER và LEFT JOIN!`,
-      isAccepted: true,
-      createdAt: new Date('2025-01-27')
-    }
-  });
-
-  // Question 5
-  const question5 = await prisma.question.create({
-    data: {
-      userId: user6.id,
-      subjectId: subject1.id,
-      title: 'Promise vs Async/Await trong JavaScript - Best practice?',
-      content: `Mình thấy có 2 cách handle asynchronous code: Promise chains và async/await.
-
-Cách nào tốt hơn? Có nên migrate hết code từ Promise sang async/await không?`,
-      status: 'OPEN',
-      views: 178,
-      createdAt: new Date('2025-02-01')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question5.id, tagId: tag1.id }
-    ]
-  });
-
-  await prisma.answer.createMany({
-    data: [
-      {
-        questionId: question5.id,
-        userId: user1.id,
-        content: `Async/await là syntactic sugar của Promise, nên về bản chất giống nhau.
-
-**Ưu điểm async/await:**
-- Code dễ đọc hơn (giống synchronous code)
-- Error handling với try/catch dễ hơn
-- Debug dễ hơn
-
-**Khi nào dùng Promise:**
-- Multiple parallel requests: \`Promise.all()\`
-- Promise chain đơn giản
-
-**Best practice:**
-\`\`\`javascript
-// ✅ Good: parallel requests
-const [users, posts] = await Promise.all([
-  fetchUsers(),
-  fetchPosts()
-]);
-
-// ❌ Bad: sequential khi không cần
-const users = await fetchUsers();
-const posts = await fetchPosts();
-\`\`\`
-
-Async/await là modern standard, nên dùng!`,
-        createdAt: new Date('2025-02-02')
-      }
-    ]
-  });
-
-  // Question 6
-  const question6 = await prisma.question.create({
-    data: {
-      userId: user7.id,
-      subjectId: subject9.id,
-      title: 'Color theory cho UI design - Làm sao chọn màu hợp lý?',
-      content: `Mình là developer đang tự học UI design. Mỗi lần chọn màu cho app đều rất struggle.
-
-Có tips gì để chọn color palette hợp lý không? Có tool nào recommend không?`,
-      status: 'OPEN',
-      views: 145,
-      createdAt: new Date('2025-02-03')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question6.id, tagId: tag8.id }
-    ]
-  });
-
-  await prisma.answer.create({
-    data: {
-      questionId: question6.id,
-      userId: user2.id,
-      content: `Một số tips:
-
-**1. Chọn 1 màu chủ đạo**
-Dựa vào brand hoặc cảm xúc muốn truyền tải
-
-**2. Dùng 60-30-10 rule**
-- 60% dominant color
-- 30% secondary color  
-- 10% accent color
-
-**3. Tools hữu ích:**
-- Coolors.co: Generate palettes
-- Adobe Color: Color wheel
-- Material Design colors
-- TailwindCSS colors
-
-**4. Contrast ratio**
-WCAG AA standard: 4.5:1 cho text
-Check trên WebAIM Contrast Checker
-
-**5. Tham khảo:**
-Dribbble, Behance để xem designs của pro!`,
-      isAccepted: false,
-      createdAt: new Date('2025-02-04')
-    }
-  });
-
-  // Question 7 - No answers yet
-  const question7 = await prisma.question.create({
-    data: {
-      userId: user8.id,
-      subjectId: subject1.id,
-      title: 'React useEffect cleanup function - Khi nào cần dùng?',
-      content: `Mình thấy docs React có nói về cleanup function trong useEffect:
-
-\`\`\`javascript
-useEffect(() => {
-  // effect
-  return () => {
-    // cleanup
-  };
-}, []);
-\`\`\`
-
-Khi nào thì cần dùng cleanup? Có ví dụ thực tế không?`,
-      status: 'OPEN',
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[4].id,
+      subjectId: subject_cntt_5.id,
+      title: 'React hooks: useEffect cleanup function hoạt động ra sao?',
+      content: 'Em không hiểu rõ cleanup function trong useEffect. Khi nào thì cần return cleanup function ạ?',
+      views: 89,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[5].id,
+      subjectId: subject_cntt_6.id,
+      title: 'JWT token nên lưu ở đâu? localStorage hay cookie?',
+      content: 'Em đang implement authentication với JWT. Mọi người nói localStorage không an toàn, vậy nên lưu ở đâu ạ?',
+      views: 123,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[6].id,
+      subjectId: subject_ktpm_1.id,
+      title: 'Scrum Sprint Planning nên làm như thế nào?',
+      content: 'Team em mới áp dụng Scrum, Sprint Planning Meeting thường kéo dài 3-4 tiếng. Có cách nào tối ưu không ạ?',
+      views: 41,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[7].id,
+      subjectId: subject_ktpm_2.id,
+      title: 'Unit test có thực sự cần thiết không?',
+      content: 'Em thấy viết unit test tốn thời gian mà dự án lại gấp. Có thể skip unit test được không ạ?',
+      views: 76,
+      status: 'ANSWERED'
+    },
+    {
+      userId: students[8].id,
+      subjectId: subject_cntt_1.id,
+      title: 'Làm sao để debug code hiệu quả?',
+      content: 'Em hay gặp bug nhưng không biết debug thế nào cho đúng. Mọi người có tips gì không ạ?',
       views: 92,
-      createdAt: new Date('2025-02-06')
+      status: 'OPEN'
+    },
+    {
+      userId: students[9].id,
+      subjectId: subject_cntt_5.id,
+      title: 'CSS Flexbox vs Grid - nên dùng cái nào?',
+      content: 'Em thấy cả Flexbox và Grid đều dùng cho layout. Vậy khi nào dùng Flexbox, khi nào dùng Grid ạ?',
+      views: 54,
+      status: 'OPEN'
     }
-  });
+  ];
 
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question7.id, tagId: tag3.id }
-    ]
-  });
+  const questions = [];
+  for (const q of questionsData) {
+    const question = await prisma.question.create({ data: q });
+    questions.push(question);
+  }
 
-  // Question 8 - Multiple answers, not accepted yet
-  const question8 = await prisma.question.create({
+  console.log(`✓ Created ${questions.length} questions`);
+
+  // ============================================
+  // 16. Link Tags to Questions
+  // ============================================
+  console.log('\n🔗 Linking tags to questions...');
+  
+  let questionTagCount = 0;
+
+  // Q1: Python list/tuple - Python, Beginner
+  await prisma.questionTag.create({ data: { questionId: questions[0].id, tagId: tags[1].id } });
+  await prisma.questionTag.create({ data: { questionId: questions[0].id, tagId: tags[10].id } });
+  questionTagCount += 2;
+
+  // Q2: Quick Sort - Python, Advanced
+  await prisma.questionTag.create({ data: { questionId: questions[1].id, tagId: tags[1].id } });
+  await prisma.questionTag.create({ data: { questionId: questions[1].id, tagId: tags[11].id } });
+  questionTagCount += 2;
+
+  // Q3: Abstract class - Python, Advanced
+  await prisma.questionTag.create({ data: { questionId: questions[2].id, tagId: tags[1].id } });
+  await prisma.questionTag.create({ data: { questionId: questions[2].id, tagId: tags[11].id } });
+  questionTagCount += 2;
+
+  // Q4: SQL JOIN - Database
+  await prisma.questionTag.create({ data: { questionId: questions[3].id, tagId: tags[4].id } });
+  questionTagCount += 1;
+
+  // Q5: React hooks - React, JavaScript
+  await prisma.questionTag.create({ data: { questionId: questions[4].id, tagId: tags[2].id } });
+  await prisma.questionTag.create({ data: { questionId: questions[4].id, tagId: tags[0].id } });
+  questionTagCount += 2;
+
+  // Q6: JWT - Backend, Security
+  await prisma.questionTag.create({ data: { questionId: questions[5].id, tagId: tags[6].id } });
+  await prisma.questionTag.create({ data: { questionId: questions[5].id, tagId: tags[8].id } });
+  questionTagCount += 2;
+
+  // Q7: Scrum - Advanced
+  await prisma.questionTag.create({ data: { questionId: questions[6].id, tagId: tags[11].id } });
+  questionTagCount += 1;
+
+  // Q8: Unit test - Backend
+  await prisma.questionTag.create({ data: { questionId: questions[7].id, tagId: tags[6].id } });
+  questionTagCount += 1;
+
+  // Q9: Debug - Beginner
+  await prisma.questionTag.create({ data: { questionId: questions[8].id, tagId: tags[10].id } });
+  questionTagCount += 1;
+
+  // Q10: CSS Flexbox/Grid - Frontend
+  await prisma.questionTag.create({ data: { questionId: questions[9].id, tagId: tags[5].id } });
+  questionTagCount += 1;
+
+  console.log(`✓ Created ${questionTagCount} question tags`);
+
+  // ============================================
+  // 17. Create Answers for Questions
+  // ============================================
+  console.log('\n💡 Creating answers...');
+  
+  let answerCount = 0;
+
+  // Answers for Q1 (Python list/tuple)
+  await prisma.answer.create({
     data: {
-      userId: user3.id,
-      subjectId: subject7.id,
-      title: 'Machine Learning model overfitting - Làm sao khắc phục?',
-      content: `Model của mình train accuracy 98% nhưng test accuracy chỉ 65%.
-
-Mình biết đây là overfitting. Có cách nào khắc phục không ạ?`,
-      status: 'OPEN',
-      views: 267,
-      createdAt: new Date('2025-02-08')
+      questionId: questions[0].id,
+      userId: teachers[0].id,
+      content: 'List là mutable (có thể thay đổi) còn tuple là immutable (không thể thay đổi). List dùng [] còn tuple dùng (). Dùng tuple khi bạn muốn data không bị thay đổi, ví dụ: tọa độ (x, y), config settings. Dùng list khi cần thay đổi data thường xuyên.',
+      isAccepted: true
     }
   });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question8.id, tagId: tag2.id },
-      { questionId: question8.id, tagId: tag7.id }
-    ]
-  });
-
-  await prisma.answer.createMany({
-    data: [
-      {
-        questionId: question8.id,
-        userId: user5.id,
-        content: `Một số techniques:
-
-**1. More training data**
-Cách tốt nhất nhưng không phải lúc nào cũng có
-
-**2. Regularization**
-- L1/L2 regularization
-- Dropout layers
-
-**3. Cross-validation**
-K-fold CV để đánh giá model tốt hơn
-
-**4. Reduce model complexity**
-Giảm số layers hoặc neurons
-
-**5. Data augmentation**
-Với image: rotate, flip, crop
-Với text: synonym replacement
-
-**6. Early stopping**
-Stop training khi validation loss tăng`,
-        createdAt: new Date('2025-02-09')
-      },
-      {
-        questionId: question8.id,
-        userId: user1.id,
-        content: `Thêm 1 tip: Feature engineering
-
-Đôi khi mình có quá nhiều features không cần thiết. Hãy thử:
-- Feature selection
-- PCA (Principal Component Analysis)
-- Remove correlated features
-
-Và nhớ plot learning curves để visualize overfitting!`,
-        createdAt: new Date('2025-02-10')
-      }
-    ]
-  });
-
-  // Question 9
-  const question9 = await prisma.question.create({
-    data: {
-      userId: user5.id,
-      subjectId: subject3.id,
-      title: 'PostgreSQL vs MySQL - Nên chọn database nào?',
-      content: `Mình đang start project mới và phân vân giữa PostgreSQL và MySQL.
-
-Ai có kinh nghiệm có thể advice không? Điểm mạnh/yếu của từng cái là gì?`,
-      status: 'OPEN',
-      views: 198,
-      createdAt: new Date('2025-02-11')
-    }
-  });
-
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question9.id, tagId: tag5.id }
-    ]
-  });
+  answerCount++;
 
   await prisma.answer.create({
     data: {
-      questionId: question9.id,
-      userId: user8.id,
-      content: `Cả 2 đều tốt, nhưng có điểm khác:
-
-**PostgreSQL:**
-✅ ACID compliance mạnh hơn
-✅ Advanced features: JSON, arrays, full-text search
-✅ Better for complex queries
-✅ Extensible (custom functions, types)
-❌ Setup phức tạp hơn
-❌ Ít hosting providers hơn
-
-**MySQL:**
-✅ Easier to setup
-✅ Faster cho read-heavy workloads
-✅ Nhiều hosting options
-✅ Large community
-❌ Ít features nâng cao hơn
-
-**Recommendation:**
-- Complex apps, need JSON, advanced queries → PostgreSQL
-- Simple CRUD, need speed, easy deploy → MySQL
-
-Mình thích PostgreSQL hơn vì powerful!`,
-      isAccepted: true,
-      createdAt: new Date('2025-02-12')
+      questionId: questions[0].id,
+      userId: students[10].id,
+      content: 'Thêm một điểm nữa là tuple nhanh hơn list một chút vì immutable.'
     }
   });
+  answerCount++;
 
-  // Question 10 - No answer yet
-  const question10 = await prisma.question.create({
+  // Answers for Q2 (Quick Sort)
+  await prisma.answer.create({
     data: {
-      userId: user4.id,
-      subjectId: subject5.id,
-      title: 'Docker multi-stage build - Tại sao nên dùng?',
-      content: `Mình thấy nhiều Dockerfile dùng multi-stage build:
-
-\`\`\`dockerfile
-FROM node:18 AS builder
-# build steps...
-
-FROM node:18-alpine
-COPY --from=builder /app/dist ./dist
-\`\`\`
-
-Tại sao không build luôn trong 1 stage? Advantages là gì?`,
-      status: 'OPEN',
-      views: 156,
-      createdAt: new Date('2025-02-13')
+      questionId: questions[1].id,
+      userId: teachers[0].id,
+      content: 'Để tránh worst case O(n²), bạn có thể: 1) Chọn pivot random thay vì luôn chọn phần tử đầu/cuối. 2) Dùng "median of three" - chọn pivot là median của first, middle, last. 3) Dùng Randomized Quick Sort. Hoặc đơn giản là dùng built-in sort() đã được optimize rất tốt rồi!',
+      isAccepted: true
     }
   });
+  answerCount++;
 
-  await prisma.questionTag.createMany({
-    data: [
-      { questionId: question10.id, tagId: tag6.id }
-    ]
+  // Answers for Q3 (Abstract class vs Interface)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[2].id,
+      userId: teachers[0].id,
+      content: 'Abstract class: Dùng khi có shared code giữa các subclasses. Có thể có concrete methods. Interface: Dùng khi muốn define contract mà nhiều classes không liên quan có thể implement. Ví dụ: Shape là abstract class (có shared code tính area), còn Drawable là interface (nhiều thứ có thể draw được).',
+      isAccepted: true
+    }
   });
+  answerCount++;
 
-  console.log('✓ Created 12 tags, 10 questions with various answer statuses');
+  await prisma.answer.create({
+    data: {
+      questionId: questions[2].id,
+      userId: students[11].id,
+      content: 'Một class chỉ extend 1 abstract class nhưng có thể implement nhiều interfaces. Đây cũng là điểm khác biệt quan trọng.'
+    }
+  });
+  answerCount++;
 
-  console.log('\n✅ Seeding completed successfully!\n');
-  console.log('� Database Summary:');
-  console.log('  ✓ 8 users (1 admin + 7 students)');
-  console.log('  ✓ 6 majors (IT, Math, Data Science, Design, Business, Software Engineering)');
-  console.log('  ✓ 15 enrollments (users enrolled in various majors)');
-  console.log('  ✓ 10 subjects with 40 lessons');
-  console.log('  ✓ 4 exams with 60 questions');
-  console.log('  ✓ 12 blog posts from various users');
-  console.log('  ✓ 12 tags');
-  console.log('  ✓ 10 Q&A questions with answers\n');
-  console.log('�📝 Demo accounts (all passwords: 123456):');
-  console.log('  👑 Admin: admin@learnhub.com / admin123');
-  console.log('  👤 User1: student@example.com (ACTIVE, enrolled: IT + Data Science)');
-  console.log('  👤 User2: student2@example.com (APPROVED, enrolled: Math + Design)');
-  console.log('  👤 User3: pending@example.com (PENDING, enrolled: IT)');
-  console.log('  👤 User4: user4@example.com (ACTIVE, enrolled: IT + Software Engineering)');
-  console.log('  👤 User5: user5@example.com (ACTIVE, enrolled: Data Science + Business)');
-  console.log('  👤 User6: user6@example.com (ACTIVE, enrolled: IT + Data Science)');
-  console.log('  👤 User7: user7@example.com (ACTIVE, enrolled: Design + Business)');
-  console.log('  👤 User8: user8@example.com (ACTIVE, enrolled: Math + Software Engineering)\n');
-  console.log('🎯 Test Features:');
-  console.log('  • Chat friend suggestions: Users with shared majors');
-  console.log('  • Q&A filtering: By major → subject');
-  console.log('  • Blog posts: From various authors with tags');
-  console.log('  • Face recognition: Lesson progress tracking\n');
+  // Answers for Q4 (SQL JOIN)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[3].id,
+      userId: teachers[1].id,
+      content: 'INNER JOIN: Chỉ lấy records có match ở cả 2 tables. LEFT JOIN: Lấy tất cả records từ left table, records từ right table nếu match (nếu không match thì NULL). Ví dụ: Students LEFT JOIN Enrollments sẽ show tất cả students, kể cả students chưa enroll môn nào (enrollment = NULL).',
+      isAccepted: true
+    }
+  });
+  answerCount++;
+
+  // Answers for Q5 (React useEffect cleanup)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[4].id,
+      userId: teachers[1].id,
+      content: 'Cleanup function chạy khi: 1) Component unmount, 2) Trước khi effect chạy lại (nếu dependencies thay đổi). Cần cleanup khi: - Subscribe/Unsubscribe events, - setTimeout/setInterval, - WebSocket connections, - Cancel API requests. Ví dụ: useEffect(() => { const timer = setTimeout(...); return () => clearTimeout(timer); }, []);',
+      isAccepted: true
+    }
+  });
+  answerCount++;
+
+  await prisma.answer.create({
+    data: {
+      questionId: questions[4].id,
+      userId: students[12].id,
+      content: 'Nếu không cleanup setInterval thì nó sẽ chạy mãi kể cả khi component đã unmount, gây memory leak đấy!'
+    }
+  });
+  answerCount++;
+
+  // Answers for Q6 (JWT storage)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[5].id,
+      userId: teachers[1].id,
+      content: 'Tốt nhất là dùng httpOnly cookie để tránh XSS attacks. LocalStorage có thể bị đọc bằng JavaScript nên không an toàn nếu có XSS. HttpOnly cookie không thể access từ JavaScript, chỉ server mới đọc được. Nhớ set Secure và SameSite flags nữa nhé!',
+      isAccepted: true
+    }
+  });
+  answerCount++;
+
+  await prisma.answer.create({
+    data: {
+      questionId: questions[5].id,
+      userId: teachers[3].id,
+      content: 'Bổ sung thêm: Nếu dùng cookie thì cần implement CSRF protection. Trade-off là localStorage dễ implement hơn nhưng kém bảo mật hơn.'
+    }
+  });
+  answerCount++;
+
+  // Answers for Q7 (Sprint Planning)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[6].id,
+      userId: teachers[0].id,
+      content: 'Sprint Planning không nên quá 2 tiếng cho 2-week sprint. Tips: 1) Product Owner chuẩn bị backlog trước, 2) Team đã review user stories trước meeting, 3) Chỉ estimate high-level, chi tiết để daily standup, 4) Time-box mỗi story discussion. Nếu quá 2h thì có vấn đề về preparation!',
+      isAccepted: true
+    }
+  });
+  answerCount++;
+
+  // Answers for Q8 (Unit test)
+  await prisma.answer.create({
+    data: {
+      questionId: questions[7].id,
+      userId: teachers[1].id,
+      content: 'Unit test RẤT cần thiết! Không phải mất thời gian mà là TIẾT KIỆM thời gian sau này. Khi code base lớn, không có test thì refactor = ác mộng. Bug phát hiện sớm rẻ hơn 100 lần so với bug ở production. TDD giúp design tốt hơn. Short-term có vẻ chậm, long-term team nhanh hơn nhiều!',
+      isAccepted: true
+    }
+  });
+  answerCount++;
+
+  await prisma.answer.create({
+    data: {
+      questionId: questions[7].id,
+      userId: students[13].id,
+      content: 'Team em dùng TDD và em thấy rất hiệu quả. Ban đầu hơi khó quen nhưng sau đó code quality tăng rõ rệt.'
+    }
+  });
+  answerCount++;
+
+  console.log(`✓ Created ${answerCount} answers`);
+
+  // ============================================
+  // Summary
+  // ============================================
+  console.log('\n✅ Database seeding completed successfully!\n');
+  console.log('📊 Summary:');
+  console.log('  - 1 Admin (admin@learnhub.com / admin123)');
+  console.log('  - 5 Teachers (teacher1-5@example.com / teacher123)');
+  console.log('  - 40 Students (student1-40@example.com / 123456)');
+  console.log('  - 6 Majors');
+  console.log(`  - ${allSubjects.length} Subjects`);
+  console.log(`  - ${lessonCount} Lessons`);
+  console.log(`  - ${examCount} Exams with questions`);
+  console.log(`  - ${enrollmentCount} Enrollments`);
+  console.log(`  - ${progressCount} Lesson progress records`);
+  console.log(`  - ${attemptCount} Exam attempts`);
+  console.log(`  - ${blogPosts.length} Blog posts`);
+  console.log(`  - ${tags.length} Tags`);
+  console.log(`  - ${commentCount} Comments`);
+  console.log(`  - ${questions.length} Questions`);
+  console.log(`  - ${answerCount} Answers`);
+  
+  console.log('\n⭐ TESTING ACCOUNTS:');
+  console.log('  ┌─────────────────────────────────────────────────────────────┐');
+  console.log('  │ STUDENT 1 (student1@example.com / 123456)                   │');
+  console.log('  │   → Enrolled in: CNTT (Teacher 1)                           │');
+  console.log('  │   → 15 lesson progress records (12 completed, 3 in progress)│');
+  console.log('  │   → 5 exam attempts with 65-85% scores                      │');
+  console.log('  │   → Data spread across 3 months for analytics testing       │');
+  console.log('  ├─────────────────────────────────────────────────────────────┤');
+  console.log('  │ TEACHER 1 (teacher1@example.com / teacher123)               │');
+  console.log('  │   → Teaches: CNTT (4 môn), Kỹ thuật PM (2 môn), ANM (1 môn) │');
+  console.log('  │   → Has 20+ students including Student 1                    │');
+  console.log('  │   → Can view Student 1 analytics in teacher dashboard       │');
+  console.log('  └─────────────────────────────────────────────────────────────┘');
+  
+  console.log('\n👨‍🏫 Teacher assignments:');
+  console.log('  - Teacher 1: 8 subjects (focus for testing)');
+  console.log('  - Teacher 2: 8 subjects');
+  console.log('  - Teacher 3: 4 subjects (Khoa học dữ liệu)');
+  console.log('  - Teacher 4: 3 subjects (An ninh mạng)');
+  console.log('  - Teacher 5: 6 subjects (Thiết kế + Marketing)');
+  
+  console.log('\n👥 Student distribution:');
+  console.log('  - CNTT: 20 students (Teacher 1 & 2) ⭐');
+  console.log('  - Kỹ thuật PM: 10 students (Teacher 1 & 2)');
+  console.log('  - Others: distributed across remaining majors');
+  console.log('\n🎯 Ready for analytics testing!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error('❌ Seeding error:', e);
     process.exit(1);
   })
   .finally(async () => {

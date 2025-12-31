@@ -97,7 +97,7 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="pl-10 h-12 border-2 focus:border-purple-500 transition-colors"
+                    className="pl-10 h-12 border-2 focus:border-purple-500 transition-colors selection:bg-blue-200 selection:text-blue-900"
                   />
                 </div>
               </div>
@@ -114,7 +114,7 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={handleChange}
                     required
-                    className="pl-10 pr-10 h-12 border-2 focus:border-purple-500 transition-colors"
+                    className="pl-10 pr-10 h-12 border-2 focus:border-purple-500 transition-colors selection:bg-blue-200 selection:text-blue-900"
                   />
                   <button
                     type="button"
@@ -132,9 +132,18 @@ export default function LoginPage() {
 
               {/* Demo accounts info */}
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                <p className="text-xs text-blue-800 font-medium mb-1">💡 Tài khoản demo:</p>
-                <p className="text-xs text-blue-700">student@example.com / 123456</p>
-                <p className="text-xs text-blue-700">admin@learnhub.com / admin123</p>
+                <p className="text-xs text-blue-800 font-medium mb-2">💡 Tài khoản demo:</p>
+                <div className="space-y-1">
+                  <p className="text-xs text-blue-700">
+                    <span className="font-semibold">Admin:</span> admin@learnhub.com / admin123
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    <span className="font-semibold">Giảng viên:</span> teacher1@example.com / teacher123
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    <span className="font-semibold">Sinh viên:</span> student1@example.com / 123456
+                  </p>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4 pt-2">

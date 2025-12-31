@@ -58,7 +58,7 @@ interface ExamWithRelations extends Exam {
 }
 
 export default function AdminExamsPage() {
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, isTeacher } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -91,13 +91,13 @@ export default function AdminExamsPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
-    } else if (!authLoading && user && !isAdmin) {
+    } else if (!authLoading && user && !isAdmin && !isTeacher) {
       router.push('/dashboard');
-    } else if (user && isAdmin) {
+    } else if (user && (isAdmin || isTeacher)) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isAdmin]);
+  }, [user, authLoading, isAdmin, isTeacher]);
 
   const loadData = async () => {
     try {

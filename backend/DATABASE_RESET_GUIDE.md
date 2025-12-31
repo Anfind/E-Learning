@@ -1,3 +1,26 @@
+
+# Di chuyển vào thư mục backend
+cd c:\An\E-Learning\backend
+
+# 1. Generate Prisma Client
+npx prisma generate
+
+# 2. Migrate database (tạo tables)
+npx prisma migrate dev
+
+# 3. Seed dữ liệu mẫu
+npx prisma db seed
+# hoặc
+npm run prisma:seed
+
+# 4. Reset database (xóa hết + migrate + seed lại)
+npx prisma migrate reset
+
+# 5. Mở Prisma Studio (GUI xem database)
+npx prisma studio
+# hoặc
+npm run prisma:studio
+
 # 📚 Database Reset & Seed Guide
 
 ## 🔄 Prisma Commands Explained

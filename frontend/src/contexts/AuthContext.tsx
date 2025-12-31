@@ -19,6 +19,7 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAdmin: boolean;
+  isTeacher: boolean;
   isAuthenticated: boolean;
 }
 
@@ -65,6 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect based on role
       if (user.role === 'ADMIN') {
         router.push('/admin/dashboard');
+      } else if (user.role === 'TEACHER') {
+        router.push('/teacher/dashboard');
       } else {
         router.push('/dashboard');
       }
@@ -115,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshUser,
     isAdmin: user?.role === 'ADMIN',
+    isTeacher: user?.role === 'TEACHER',
     isAuthenticated: !!user,
   };
 

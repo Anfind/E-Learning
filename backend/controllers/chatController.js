@@ -8,6 +8,13 @@ const streamClient = StreamChat.getInstance(
   process.env.STREAM_API_SECRET
 );
 
+// Map app roles to Stream Chat roles (only 'admin' and 'user' are valid in Stream)
+const mapRoleToStreamRole = (appRole) => {
+  if (appRole === 'ADMIN') return 'admin';
+  // Both TEACHER and USER get 'user' role in Stream Chat
+  return 'user';
+};
+
 // @desc    Generate Stream Chat token for user
 // @route   POST /api/chat/token
 // @access  Private
@@ -27,7 +34,8 @@ exports.generateToken = async (req, res, next) => {
       name: user.name,
       email: user.email,
       image: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}`,
-      role: user.role.toLowerCase(), // 'admin' or 'user'
+      role: mapRoleToStreamRole(user.role),
+      appRole: user.role, // Store original app role as custom field
       status: user.status
     });
 
@@ -56,7 +64,8 @@ exports.generateToken = async (req, res, next) => {
             name: u.name,
             email: u.email,
             image: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}`,
-            role: u.role.toLowerCase(),
+            role: mapRoleToStreamRole(u.role),
+            appRole: u.role, // Store original app role as custom field
             status: u.status
           }))
         );

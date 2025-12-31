@@ -345,11 +345,11 @@ function compareFaces(embedding1, embedding2, threshold = null) {
   if (threshold === null) {
     const dim = embedding1.length;
     if (dim === 128) {
-      threshold = 0.49; // ✅ Relaxed threshold for easier matching (was 0.48)
+      threshold = 0.65; // ✅ Relaxed threshold for easier matching
     } else if (dim === 512) {
-      threshold = 0.6; // Large embedding
+      threshold = 0.7; // Large embedding - also relaxed
     } else {
-      threshold = 0.5; // Default
+      threshold = 0.6; // Default - relaxed
     }
     console.log(`[FACE] Auto threshold: ${threshold} (dim=${dim})`);
   } else {

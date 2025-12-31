@@ -44,9 +44,12 @@ export default function LessonViewerPage() {
   // Face verification states
   const [showStartVerification, setShowStartVerification] = useState(false);
   const [showEndVerification, setShowEndVerification] = useState(false);
+  const [showPeriodicVerification, setShowPeriodicVerification] = useState(false);
   const [isStartVerified, setIsStartVerified] = useState(false);
   const [isEndVerified, setIsEndVerified] = useState(false);
   const [canComplete, setCanComplete] = useState(false);
+  const [lastVerificationTime, setLastVerificationTime] = useState(0);
+  const [periodicVerifyCount, setPeriodicVerifyCount] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -81,6 +84,22 @@ export default function LessonViewerPage() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, isStartVerified, duration, isEndVerified, showEndVerification, progress?.completed]);
+
+  // ✅ Periodic face verification every 5 minutes (300 seconds)
+  useEffect(() => {
+    const VERIFICATION_INTERVAL = 300; // 5 phút = 300 giây
+    
+    if (playing && isStartVerified && !showPeriodicVerification && !showEndVerification) {
+      const timeSinceLastVerification = watchTime - lastVerificationTime;
+      
+      // Nếu đã quá 5 phút từ lần xác thực cuối cùng
+      if (timeSinceLastVerification >= VERIFICATION_INTERVAL) {
+        console.log(`[PERIODIC] Yêu cầu xác thực mặt - đã ${timeSinceLastVerification}s từ lần xác thực cuối`);
+        setPlaying(false);
+        setShowPeriodicVerification(true);
+      }
+    }
+  }, [watchTime, playing, isStartVerified, lastVerificationTime, showPeriodicVerification, showEndVerification]);
 
   // Check if can complete
   useEffect(() => {
@@ -136,6 +155,7 @@ export default function LessonViewerPage() {
       setIsStartVerified(true);
       setShowStartVerification(false);
       setPlaying(true);
+      setLastVerificationTime(watchTime); // Reset thời gian xác thực
       toast.success('Bắt đầu học bài');
     } catch (error: unknown) {
       console.error('Failed to start lesson:', error);
@@ -153,9 +173,24 @@ export default function LessonViewerPage() {
       setIsEndVerified(true);
       setShowEndVerification(false);
       setPlaying(true);
+      setLastVerificationTime(watchTime); // Reset thời gian xác thực
       toast.success('Xác thực thành công! Bạn có thể hoàn thành bài học.');
     } catch (error) {
       console.error('Failed to verify after lesson:', error);
+      toast.error('Không thể xác thực');
+    }
+  };
+
+  const handlePeriodicVerified = async () => {
+    try {
+      // Gọi API để ghi nhận xác thực định kỳ (có thể tạo API mới hoặc dùng lại)
+      setShowPeriodicVerification(false);
+      setLastVerificationTime(watchTime); // Reset thời gian xác thực
+      setPeriodicVerifyCount(prev => prev + 1);
+      setPlaying(true);
+      toast.success(`Xác thực định kỳ lần ${periodicVerifyCount + 1} thành công! Tiếp tục học...`);
+    } catch (error) {
+      console.error('Failed to verify periodic:', error);
       toast.error('Không thể xác thực');
     }
   };
@@ -425,6 +460,7 @@ export default function LessonViewerPage() {
                         <li>Xác thực khuôn mặt trước khi bắt đầu</li>
                         <li>Xem ít nhất 2/3 thời lượng video</li>
                         <li>Xác thực khuôn mặt lần 2 khi đạt 2/3</li>
+                        <li className="text-amber-600 font-medium">Xác thực định kỳ mỗi 5 phút</li>
                         <li>Hoàn thành bài học để mở khóa bài tiếp theo</li>
                       </ul>
                     </AlertDescription>
@@ -461,7 +497,7 @@ export default function LessonViewerPage() {
 
       {/* Face Verification Dialogs */}
       <Dialog open={showStartVerification} onOpenChange={setShowStartVerification}>
-        <DialogContent className="!max-w-7xl w-[95vw] p-0 overflow-hidden">
+        <DialogContent className="!max-w-4xl w-[90vw] max-h-[90vh] p-0 overflow-hidden">
           <FaceVerificationCamera
             expectedUserId={user?.id}
             onClose={() => setShowStartVerification(false)}
@@ -473,13 +509,36 @@ export default function LessonViewerPage() {
       </Dialog>
 
       <Dialog open={showEndVerification} onOpenChange={setShowEndVerification}>
-        <DialogContent className="!max-w-7xl w-[95vw] p-0 overflow-hidden">
+        <DialogContent className="!max-w-4xl w-[90vw] max-h-[90vh] p-0 overflow-hidden">
           <FaceVerificationCamera
             expectedUserId={user?.id}
             onClose={() => setShowEndVerification(false)}
             onSuccess={handleEndVerified}
             onError={(error) => toast.error(error)}
             verificationPhase="after"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Periodic Face Verification Dialog - Every 5 minutes */}
+      <Dialog open={showPeriodicVerification} onOpenChange={(open) => {
+        // Không cho phép đóng popup bằng click outside - phải xác thực
+        if (!open) return;
+        setShowPeriodicVerification(open);
+      }}>
+        <DialogContent className="!max-w-4xl w-[90vw] max-h-[90vh] p-0 overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 text-white text-center">
+            <p className="font-semibold">⏰ Xác thực định kỳ (mỗi 5 phút) - Lần {periodicVerifyCount + 1}</p>
+          </div>
+          <FaceVerificationCamera
+            expectedUserId={user?.id}
+            onClose={() => {
+              // Không cho phép đóng - phải xác thực thành công
+              toast.warning('Vui lòng xác thực khuôn mặt để tiếp tục học!');
+            }}
+            onSuccess={handlePeriodicVerified}
+            onError={(error) => toast.error(error)}
+            verificationPhase="before"
           />
         </DialogContent>
       </Dialog>

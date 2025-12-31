@@ -42,6 +42,7 @@ model User {
   answers         Answer[]
   comments        Comment[]
   teacherSubjects Subject[]     // Các môn học mà giáo viên phụ trách
+  learningReports LearningReport[] // Báo cáo học tập
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -240,6 +241,7 @@ model ExamQuestion {
   order           Int       @default(0)
   
   exam            Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  stats           QuestionStats? // Thống kê độ khó
   
   createdAt       DateTime  @default(now())
   
@@ -412,4 +414,50 @@ model Comment {
   @@index([postId])
   @@index([userId])
   @@map("comments")
+}
+
+// ============================================
+// LEARNING ANALYTICS
+// ============================================
+
+// Track question difficulty based on user attempts
+model QuestionStats {
+  id              String   @id @default(uuid())
+  examQuestionId  String   @unique
+  totalAttempts   Int      @default(0)
+  correctAttempts Int      @default(0)
+  difficultyLevel String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  
+  examQuestion    ExamQuestion @relation(fields: [examQuestionId], references: [id], onDelete: Cascade)
+  
+  updatedAt       DateTime @updatedAt
+  
+  @@map("question_stats")
+}
+
+// Cache learning reports for performance
+model LearningReport {
+  id          String      @id @default(uuid())
+  userId      String
+  type        ReportType
+  period      String?     // "2025-12" for monthly
+  referenceId String?     // examAttemptId or subjectId
+  data        String      @db.LongText // JSON report data
+  aiInsights  String?     @db.LongText // AI analysis from Groq
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@unique([userId, type, period, referenceId])
+  @@index([userId, type])
+  @@map("learning_reports")
+}
+
+enum ReportType {
+  MONTHLY
+  EXAM
+  SUBJECT
+  OVERVIEW
 }

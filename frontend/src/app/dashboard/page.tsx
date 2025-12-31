@@ -22,6 +22,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { AnalyticsWidget } from '@/components/analytics/AnalyticsWidget';
 import type { DashboardOverview, Major } from '@/types';
 import { getUploadUrl } from '@/lib/api';
 
@@ -135,6 +136,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
+            {/* Analytics Widget */}
+            <div className="lg:col-span-3 mb-2">
+              <AnalyticsWidget userRole={user?.role as 'STUDENT' | 'TEACHER' | 'ADMIN'} />
+            </div>
+
             {/* Enrolled Majors */}
             <div className="lg:col-span-2">
               <Card className="border-0 shadow-lg bg-white/80 backdrop-blur">
